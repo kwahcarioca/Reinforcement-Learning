@@ -10,7 +10,7 @@ Welcome to my Reinforcement Learning (RL) study repository. This space brings to
 
 * **`K-bandidos/`**: Comprehensive study on the K-Armed Bandit problem.
   * **`notebooks/`**: Interactive Jupyter/Google Colab notebooks with simulations and comparative analysis of agents ($\epsilon$-greedy, UCB, Thompson Sampling, Gradient Bandit).
-  * **`paper/`**: Technical article *"From Theory to Code: Implementing K-Armed Bandits with Design Patterns"* available in English and Spanish.
+  * **`paper/`**: Technical article *"From Theory to Code: Implementing K-Armed Bandits with Design Patterns"* available in Portugues(original), English and Spanish.
 
 ---
 
