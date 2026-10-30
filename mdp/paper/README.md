@@ -1,118 +1,119 @@
-**Autor:** Marco Aurélio Guimarães Falcão -- Engenheiro de Sistemas
+**Autor:** Marco Aurélio Guimarães Falcão -- Ingeniero de Sistemas
 
-**Data:** 30/10/2026
+**Fecha:** 30/10/2026
 
-# Resumo
+# Resumen
 
-Este artigo apresenta o formalismo dos Processos de Decisão de Markov
-(MDP) no contexto do Aprendizado por Reforço, contemplando ambientes com
-múltiplos estados e dinâmica de transição. São apresentados a cadeia de
-Markov, a definição formal de MDP, a política, o retorno, as funções de
-valor e as equações de Bellman, nas formas escalar, vetorizada e ótima.
-Em seguida, são descritos os métodos de solução por Iteração de Valor,
-Iteração de Política, Generalized Policy Iteration e Modified Policy
-Iteration, com a comparação de seus custos computacionais. Os algoritmos
-foram implementados em Python, com modelagem orientada a objetos e
-padrões de projeto, e aplicados a quatro problemas: um robô logístico em
-tabuleiro 2 x 2, o tabuleiro 5 x 5 do livro de Sutton e Barto, o Lago
-Congelado (Frozen Lake) e uma versão simplificada do jogo do Wumpus. Os
-resultados confirmaram o funcionamento correto dos algoritmos e
-evidenciaram as limitações dos MDP, em especial a necessidade de
-conhecer o modelo do ambiente e o crescimento do custo computacional com
-o número de estados.
+Este artículo presenta el formalismo de los Procesos de Decisión de
+Markov (MDP) en el contexto del Aprendizaje por Refuerzo, considerando
+entornos con múltiples estados y dinámica de transición. Se presentan la
+cadena de Markov, la definición formal de MDP, la política, el retorno,
+las funciones de valor y las ecuaciones de Bellman, en sus formas
+escalar, vectorizada y óptima. A continuación, se describen los métodos
+de solución por Iteración de Valor, Iteración de Política, Generalized
+Policy Iteration y Modified Policy Iteration, con la comparación de sus
+costos computacionales. Los algoritmos fueron implementados en Python,
+con modelado orientado a objetos y patrones de diseño, y aplicados a
+cuatro problemas: un robot logístico en un tablero de 2 x 2, el tablero
+de 5 x 5 del libro de Sutton y Barto, el Lago Congelado (Frozen Lake) y
+una versión simplificada del juego del Wumpus. Los resultados
+confirmaron el correcto funcionamiento de los algoritmos y evidenciaron
+las limitaciones de los MDP, en especial la necesidad de conocer el
+modelo del entorno y el crecimiento del costo computacional con el
+número de estados.
 
-**Palavras-chave:** Aprendizado por Reforço; Processos de Decisão de
-Markov; Equações de Bellman; Iteração de Valor; Iteração de Política;
-Programação Dinâmica.
+**Palabras clave:** Aprendizaje por Refuerzo; Procesos de Decisión de
+Markov; Ecuaciones de Bellman; Iteración de Valor; Iteración de
+Política; Programación Dinámica.
 
-# Introdução
+# Introducción
 
-Como ilustrado na Figura 1, os conceitos fundamentais do Aprendizado por
-Reforço podem ser apresentados a partir da interação simplificada entre
-agente e ambiente explorada no estudo do problema dos $K$-bandidos
-armados (Referência \[4\]). Naquele cenário, o problema é puramente
-**não-associativo**: assume-se a existência de um **único estado
-estático** (ou ambiente invariante), no qual o objetivo do agente
-reduz-se a mapear ações diretamente a recompensas imediatas, sem a
-necessidade de avaliar como a ação presente condiciona a evolução futura
-do estado do sistema.
+Como se ilustra en la Figura 1, los conceptos fundamentales del
+Aprendizaje por Refuerzo pueden presentarse a partir de la interacción
+simplificada entre agente y entorno explorada en el estudio del problema
+de los $K$-bandidos armados (Referencia \[4\]). En aquel escenario, el
+problema es puramente **no asociativo**: se supone la existencia de un
+**único estado estático** (o entorno invariante), en el cual el objetivo
+del agente se reduce a mapear acciones directamente a recompensas
+inmediatas, sin necesidad de evaluar cómo la acción presente condiciona
+la evolución futura del estado del sistema.
 
-**Figura 1** -- Esquema Geral do Aprendizado por Reforço
+**1** -- Esquema General del Aprendizaje por Refuerzo
 
-Entretanto, na vasta maioria dos problemas reais de tomada de decisão
-sequencial, o ambiente exibe dinâmica complexa e múltiplos estados,
-ocorrendo dessa forma:
+Sin embargo, en la gran mayoría de los problemas reales de toma de
+decisiones secuenciales, el entorno exhibe una dinámica compleja y
+múltiples estados, de modo que ocurre lo siguiente:
 
-1.  **Dependência do Estado:** A recompensa esperada $R_{t + 1}$
-    associada à escolha de uma mesma ação $a$ varia substancialmente a
-    depender do estado corrente $s$ em que o agente se encontra.
+1.  **Dependencia del Estado:** La recompensa esperada $R_{t + 1}$
+    asociada a la elección de una misma acción $a$ varía sustancialmente
+    según el estado actual $s$ en que se encuentra el agente.
 
-2.  **Transição Dinâmica (Aprendizado Associativo):** A ação $A_{t}$
-    executada pelo agente não apenas gera um sinal de recompensa
-    imediato, mas altera a própria trajetória do sistema, conduzindo o
-    ambiente a um novo estado $S_{t + 1}$.
+2.  **Transición Dinámica (Aprendizaje Asociativo):** La acción $A_{t}$
+    ejecutada por el agente no solo genera una señal de recompensa
+    inmediata, sino que altera la propia trayectoria del sistema,
+    conduciendo al entorno a un nuevo estado $S_{t + 1}$.
 
-O presente artigo estende a formulação dos $K$-bandidos ao adotar o
-formalismo dos **Processos de Decisão de Markov (MDP)**. O MDP provê o
-arcabouço matemático rigoroso capaz de unificar percepção de estado,
-controle de ações, transições probabilísticas e otimização de
-recompensas acumuladas ao longo do tempo em ambientes multiestados sob
-incerteza.
+El presente artículo extiende la formulación de los $K$-bandidos al
+adoptar el formalismo de los **Procesos de Decisión de Markov (MDP)**.
+El MDP proporciona el marco matemático riguroso capaz de unificar la
+percepción del estado, el control de acciones, las transiciones
+probabilísticas y la optimización de recompensas acumuladas a lo largo
+del tiempo en entornos multiestado bajo incertidumbre.
 
-Este estudo foi conduzido pelo autor com o suporte de ferramentas de
-Inteligência Artificial --- **Gemini, Claude e DeepSeek** --- operando
-no ambiente de desenvolvimento **Google Colab**. A colaboração com as
-IAs abrangeu etapas cruciais da pesquisa, incluindo a revisão textual, o
-levantamento bibliográfico, a derivação das equações matemáticas do
-Processo de Decisão de Markov (MDP), a modelagem orientada a objetos com
-aplicação de padrões de projeto em Python, a implementação, teste e
-depuração dos algoritmos, além da análise dos resultados e da discussão
-das conclusões.
+Este estudio fue realizado por el autor con el apoyo de herramientas de
+Inteligencia Artificial --- **Gemini, Claude y DeepSeek** --- operando
+en el entorno de desarrollo **Google Colab**. La colaboración con las
+IAs abarcó etapas cruciales de la investigación, incluyendo la revisión
+textual, el relevamiento bibliográfico, la derivación de las ecuaciones
+matemáticas del Proceso de Decisión de Markov (MDP), el modelado
+orientado a objetos con aplicación de patrones de diseño en Python, la
+implementación, prueba y depuración de los algoritmos, además del
+análisis de los resultados y la discusión de las conclusiones.
 
-# Apresentação Geral de MDP (*Markov Decision Process*) no Contexto de Reinforcement Learning e Definição do Problema.
+# Presentación General de MDP (*Markov Decision Process*) en el Contexto de Reinforcement Learning y Definición del Problema.
 
-## 2.1 -- Cadeia de Markov
+## 2.1 -- Cadena de Markov
 
-Uma **Cadeia de Markov** (ou *Markov Chain*) representa um sistema
-estocástico totalmente autônomo e passivo. Nela, as transições entre
-estados ocorrem de forma espontânea, impulsionadas unicamente pela
-dinâmica interna do ambiente, sem a interferência de ações externas ou a
-atribuição de recompensas. A cadeia de Markov é definida apenas pela sua
-Matriz de Transição de Estados $P\left( s'|s \right)$, uma matriz n x n,
-no qual n é o número de estados.
+Una **Cadena de Markov** (o *Markov Chain*) representa un sistema
+estocástico totalmente autónomo y pasivo. En ella, las transiciones
+entre estados ocurren de forma espontánea, impulsadas únicamente por la
+dinámica interna del entorno, sin la interferencia de acciones externas
+ni la asignación de recompensas. La cadena de Markov se define solo por
+su Matriz de Transición de Estados $P\left( s'|s \right)$, una matriz n
+x n, en la que n es el número de estados.
 
-Em uma cadeia de Markov, podemos observar uma sequência de estados:
+En una cadena de Markov, podemos observar una secuencia de estados:
 
 $$S_{0} \rightarrow S_{1} \rightarrow S_{2} \rightarrow \cdots
 $$
 
-Um **episódio** é uma trajetória do processo que começa em um estado
-inicial e termina quando o processo alcança uma condição de término.
+Un **episodio** es una trayectoria del proceso que comienza en un estado
+inicial y termina cuando el proceso alcanza una condición de término.
 
-Por exemplo, em um jogo:
+Por ejemplo, en un juego:
 
-$$\text{In}\overset{ˊ}{\text{ı}}\text{cio} \rightarrow S_{1} \rightarrow S_{2} \rightarrow S_{3} \rightarrow \text{Vit}\overset{ˊ}{\text{o}}\text{ria}
+$$\text{Inicio} \rightarrow S_{1} \rightarrow S_{2} \rightarrow S_{3} \rightarrow \text{Victoria}
 $$
 
-ou
+o
 
-$$\text{In}\overset{ˊ}{\text{ı}}\text{cio} \rightarrow S_{1} \rightarrow S_{2} \rightarrow \text{Derrota}
+$$\text{Inicio} \rightarrow S_{1} \rightarrow S_{2} \rightarrow \text{Derrota}
 $$
 
-O episódio é toda a sequência entre o início e o término.
+El episodio es toda la secuencia entre el inicio y el término.
 
-Um episódio é **finito** quando existe um instante $T < \infty$ em que o
-processo termina:
+Un episodio es **finito** cuando existe un instante $T < \infty$ en que
+el proceso termina:
 
 $$S_{0},S_{1},\ldots,S_{T}
 $$
 
-e $S_{T}$é um **estado terminal**.
+y $S_{T}$ es un **estado terminal**.
 
-Depois disso, não há mais decisões ou transições relevantes para aquele
-episódio.
+Después de eso, ya no hay más decisiones ni transiciones relevantes para
+ese episodio.
 
-Um exemplo simples, onde $D$é terminal:
+Un ejemplo simple, donde $D$ es terminal:
 
 $$A \rightarrow B \rightarrow C \rightarrow D$$
 
@@ -121,98 +122,101 @@ Podemos representar:
 $$P(D \mid D) = 1
 $$
 
-Ou seja, uma vez que chegamos a $D$, permanecemos em $D$. Este modelo é
-conhecido como de horizonte finito \[3\].
+Es decir, una vez que llegamos a $D$, permanecemos en $D$. Este modelo
+es conocido como de horizonte finito \[3\].
 
-Um episódio é **infinito** quando não existe um instante terminal
+Un episodio es **infinito** cuando no existe un instante terminal
 finito:
 
 $$S_{0},S_{1},S_{2},\ldots
 $$
 
-A sequência continua indefinidamente.
+La secuencia continúa indefinidamente.
 
-Por exemplo:
+Por ejemplo:
 
 $$A \rightarrow B \rightarrow A \rightarrow B \rightarrow A \rightarrow \cdots
 $$
 
-Não existe um estado $T\$tal que o processo termine.
+No existe un estado $T\$ tal que el proceso termine.
 
-Isso aparece naturalmente em problemas como controle de temperatura,
-operação de uma máquina, mercado financeiro etc., nos quais não existe
-necessariamente um \"fim do jogo\". Este modelo é conhecido como de
-horizonte infinito \[3\].
+Esto aparece naturalmente en problemas como el control de temperatura,
+la operación de una máquina, el mercado financiero, etc., en los cuales
+no existe necesariamente un \"fin del juego\". Este modelo es conocido
+como de horizonte infinito \[3\].
 
-Podemos **transformar matematicamente o episódio finito em uma sequência
-infinita**, fazendo o estado terminal absorver o processo:
+Podemos **transformar matemáticamente el episodio finito en una
+secuencia infinita**, haciendo que el estado terminal absorba el
+proceso:
 
 $$A \rightarrow B \rightarrow C \rightarrow D \rightarrow D \rightarrow D \rightarrow \cdots
 $$
 
-Assim, a cadeia passa a ter infinitos instantes:
+Así, la cadena pasa a tener infinitos instantes:
 
 $$S_{0},S_{1},S_{2},\ldots
 $$
 
-mas, depois de atingir $D$, ela permanece eternamente nesse estado.
+pero, después de alcanzar $D$, permanece eternamente en ese estado.
 
-A **dinâmica de transição** de uma Cadeia de Markov homogênea é
-totalmente caracterizada pela sua Matriz de Transição de Estados
+La **dinámica de transición** de una Cadena de Markov homogénea está
+totalmente caracterizada por su Matriz de Transición de Estados
 $P(s' \mid s)$.
 
-**Obs:** O termo **homogênea** (ou *estacionária no tempo*) para uma
-Cadeia de Markov significa que as probabilidades de transição entre os
-estados não mudam ao longo do tempo.
+**Obs:** El término **homogénea** (o *estacionaria en el tiempo*) para
+una Cadena de Markov significa que las probabilidades de transición
+entre los estados no cambian a lo largo del tiempo.
 
-A Figura 2 ilustra a aplicação prática de uma Cadeia de Markov para a
-modelagem da negociação mensal do ativo ITUB4 na Bolsa de Valores no
-período de 2012 a 2025 (Referência \[5\]). Nesse modelo, a dinâmica do
-papel é discretizada em um espaço de estados definido pela direção da
-variação mensal do preço, dividindo-se entre os estados de **Alta** (dia
-com fechamento positivo) e **Queda** (dia com fechamento negativo).
+La Figura 2 ilustra la aplicación práctica de una Cadena de Markov para
+el modelado de la negociación mensual del activo ITUB4 en la Bolsa de
+Valores en el período de 2012 a 2025 (Referencia \[5\]). En este modelo,
+la dinámica del papel se discretiza en un espacio de estados definido
+por la dirección de la variación mensual del precio, dividiéndose entre
+los estados de **Alza** (día con cierre positivo) y **Caída** (día con
+cierre negativo).
 
-![**Figura 2** -- Exemplo de Cadeia de
-Markov](media/image1.png){width="5.3in" height="2.9097222222222223in"}
+![**2** -- Ejemplo de Cadena de Markov](media/image1.png){width="5.3in"
+height="2.9097222222222223in"}
 
-**Obs:** Note que temos um episódio infinito pois não há estado terminal
-(modelo de horizonte infinito).
+**Obs:** Nótese que tenemos un episodio infinito porque no hay estado
+terminal (modelo de horizonte infinito).
 
-O ponto crucial dessa abordagem reside no fato de que essas percentagens
-de alternância de regimes não derivam da intervenção de um único
-investidor, mas sim da própria microestrutura e do comportamento
-estocástico inerente ao mercado. Na ausência de um vetor de ações capaz
-de alterar as probabilidades de transição e sem a contabilização
-explícita de sinais de recompensa, o sistema opera estritamente como um
-**observador passivo** da frequência temporal dos eventos. Essa
-caracterização define rigorosamente um **Processo de Markov** (ou Cadeia
-de Markov), no qual a evolução do sistema é descrita apenas por
-probabilidades condicionais de estado para estado.
+El punto crucial de este enfoque reside en el hecho de que esos
+porcentajes de alternancia de regímenes no derivan de la intervención de
+un único inversionista, sino de la propia microestructura y del
+comportamiento estocástico inherente al mercado. En ausencia de un
+vector de acciones capaz de alterar las probabilidades de transición y
+sin la contabilización explícita de señales de recompensa, el sistema
+opera estrictamente como un **observador pasivo** de la frecuencia
+temporal de los eventos. Esta caracterización define rigurosamente un
+**Proceso de Markov** (o Cadena de Markov), en el cual la evolución del
+sistema se describe solo mediante probabilidades condicionales de estado
+a estado.
 
-## 2.2 -- Processo de Decisão de Markov (MDP)
+## 2.2 -- Proceso de Decisión de Markov (MDP)
 
-Em um **Processo de Decisão de Markov (MDP)**, o dinamismo do sistema é
-profundamente retratado a exemplo da Figura 1 como uma interação
-malha-fechada: as transições de estado passam a ser **disparadas e
-condicionadas à execução de ações** selecionadas ativamente por um
-agente. Além disso, cada transição gera uma recompensa escalar
-$R_{t + 1}$, que avalia a qualidade da decisão tomada.
+En un **Proceso de Decisión de Markov (MDP)**, el dinamismo del sistema
+se retrata profundamente, a ejemplo de la Figura 1, como una interacción
+en lazo cerrado: las transiciones de estado pasan a ser **disparadas y
+condicionadas a la ejecución de acciones** seleccionadas activamente por
+un agente. Además, cada transición genera una recompensa escalar
+$R_{t + 1}$, que evalúa la calidad de la decisión tomada.
 
-No arcabouço formal do MDP, tanto a trajetória dos estados futuros
-$S_{t + 1}$ quanto a magnitude das recompensas $R_{t + 1}$ são modeladas
-como **processos estocásticos acoplados**, cujas distribuições de
-probabilidade dependem do par estado-ação atual
-$\left( S_{t},A_{t} \right)$, conforme formalizado pela distribuição
-conjunta $p(s',r \mid s,a)$.
+En el marco formal del MDP, tanto la trayectoria de los estados futuros
+$S_{t + 1}$ como la magnitud de las recompensas $R_{t + 1}$ se modelan
+como **procesos estocásticos acoplados**, cuyas distribuciones de
+probabilidad dependen del par estado-acción actual
+$\left( S_{t},A_{t} \right)$, conforme se formaliza mediante la
+distribución conjunta $p(s',r \mid s,a)$.
 
-A dinâmica completa do ambiente em um MDP (Processo de Decisão de
-Markov) é inteiramente especificada por uma **função de distribuição de
-probabilidade conjunta condicional**, denotada por
+La dinámica completa del entorno en un MDP (Proceso de Decisión de
+Markov) está especificada íntegramente por una **función de distribución
+de probabilidad conjunta condicional**, denotada por
 $p:\mathcal{S} \times \mathbb{R} \times \mathcal{S} \times \mathcal{A} \rightarrow \lbrack 0,1\rbrack$.
-Essa função mapeia a probabilidade de transição para um novo estado
-$s' \in \mathcal{S}$ acompanhado de uma recompensa escalar
-$r \in \mathcal{R} \subset \mathbb{R}$, dado o estado atual
-$s \in \mathcal{S}$ e a ação executada $a \in \mathcal{A}$:
+Esta función mapea la probabilidad de transición a un nuevo estado
+$s' \in \mathcal{S}$ acompañado de una recompensa escalar
+$r \in \mathcal{R} \subset \mathbb{R}$, dado el estado actual
+$s \in \mathcal{S}$ y la acción ejecutada $a \in \mathcal{A}$:
 
   -------------------------------------------------------------------------------------------------------------------------------------------------------------
          $$p(s',r \mid s,a) \doteq \mathbb{P}\left( S_{t} = s',R_{t} = r\mspace{6mu} \middle| \mspace{6mu} S_{t - 1} = s,A_{t - 1} = a \right)\quad$$   \(1\)
@@ -220,21 +224,21 @@ $s \in \mathcal{S}$ e a ação executada $a \in \mathcal{A}$:
 
   -------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-Um **Processo de Decisão de Markov (MDP)** é a estrutura matemática
-formal utilizada para modelar a tomada de decisão sequencial em
-ambientes sob incerteza, fundamentando a teoria de Aprendizado por
-Reforço (RL). Ele é rigorosamente definido pela tupla 5-dimensional
+Un **Proceso de Decisión de Markov (MDP)** es la estructura matemática
+formal utilizada para modelar la toma de decisiones secuenciales en
+entornos bajo incertidumbre, fundamentando la teoría del Aprendizaje por
+Refuerzo (RL). Se define rigurosamente mediante la tupla 5-dimensional
 $\mathcal{M} = \left( \mathcal{S},\mathcal{A},\mathcal{P},\mathcal{R},\gamma \right)$,
-na qual:
+en la que:
 
-- $\mathcal{S}$: representa o espaço de estados finito,
+- $\mathcal{S}$: representa el espacio de estados finito,
   $\mathcal{S} = \left\{ s_{1},s_{2},\ldots,s_{n} \right\}$;
 
-- $\mathcal{A}$: representa o espaço de ações finito,
+- $\mathcal{A}$: representa el espacio de acciones finito,
   $\mathcal{A} = \left\{ a_{1},a_{2},\ldots,a_{m} \right\}$;
 
-- $\mathcal{P}$: é a dinâmica do **Modelo de Transição de Estados**,
-  dada pela probabilidade condicional:
+- $\mathcal{P}$: es la dinámica del **Modelo de Transición de Estados**,
+  dada por la probabilidad condicional:
 
 +-----+-------------------------------------------------------------------------------------------------+-------+
 |     | $$\mathcal{P}(s' \mid s,a) = \mathbb{P}\left( S_{t + 1} = s' \mid S_{t} = s,A_{t} = a \right)$$ | \(2\) |
@@ -242,17 +246,17 @@ na qual:
 |     | $$\quad$$                                                                                       |       |
 +=====+=================================================================================================+=======+
 
-**Obs:** Esta função de distribuição de probabilidades condicional
-mapeia a transição do par estado-ação corrente para o próximo estado
-$s'$, respeitando a **Propriedade** **Markoviana**: o próximo estado
-depende exclusivamente do estado e ação atuais, sendo independente do
-histórico passado.
+**Obs:** Esta función de distribución de probabilidades condicional
+mapea la transición del par estado-acción actual al siguiente estado
+$s'$, respetando la **Propiedad** **Markoviana**: el siguiente estado
+depende exclusivamente del estado y la acción actuales, siendo
+independiente del historial pasado.
 
-- $\mathcal{R}$: é a função de recompensa imediata, tipicamente definida
-  como $\mathcal{R}(s,a,s')$, que quantifica o sinal de feedback do
-  ambiente para o agente, valor esperado ou média da recompensa ao
-  executar a ação a no estado s, em transição para o estado s', em um
-  **Modelo de Recompensas Esperadas**:
+- $\mathcal{R}$: es la función de recompensa inmediata, típicamente
+  definida como $\mathcal{R}(s,a,s')$, que cuantifica la señal de
+  retroalimentación del entorno para el agente, valor esperado o
+  promedio de la recompensa al ejecutar la acción a en el estado s, en
+  transición al estado s', en un **Modelo de Recompensas Esperadas**:
 
   --------------------------------------------------------------------------------------------------------------------------------------
          $$\mathcal{R}(s,a,s') = \mathbb{E}\left\lbrack R_{t + 1} \mid S_{t} = s,A_{t} = a,S_{t + 1} = s' \right\rbrack\quad$$   \(3\)
@@ -260,16 +264,18 @@ histórico passado.
 
   --------------------------------------------------------------------------------------------------------------------------------------
 
-- $\gamma \in \lbrack 0,1)$: é o fator de desconto (*discount factor*),
-  que pondera o valor presente das recompensas obtidas no futuro.
+- $\gamma \in \lbrack 0,1)$: es el factor de descuento (*discount
+  factor*), que pondera el valor presente de las recompensas obtenidas
+  en el futuro.
 
-A probabilidade condicional conjunta $p(s',r \mid s,a)$ é a
-representação completa de um Processo de Decisão de Markov (MDP). A
-partir dela, consegue-se derivar por **marginalização** tanto o **modelo
-de transição de estados** quanto **o modelo de recompensas esperadas**.
+La probabilidad condicional conjunta $p(s',r \mid s,a)$ es la
+representación completa de un Proceso de Decisión de Markov (MDP). A
+partir de ella, se pueden derivar por **marginalización** tanto el
+**modelo de transición de estados** como **el modelo de recompensas
+esperadas**.
 
-Para obter o **Modelo de Transição de Estados** por marginalização
-soma-se todas as recompensas possíveis $r$:
+Para obtener el **Modelo de Transición de Estados** por marginalización
+se suman todas las recompensas posibles $r$:
 
 +-----+-----------------------------------------------------------------+-------+
 |     | $$P(s' \mid s,a) = \sum_{r\mathcal{\in R}}^{}p(s',r \mid s,a)$$ | \(4\) |
@@ -277,8 +283,8 @@ soma-se todas as recompensas possíveis $r$:
 |     | $$\quad$$                                                       |       |
 +=====+=================================================================+=======+
 
-Para obter o **Modelo de Recompensas** **Esperadas** calcula-se a média
-ponderada das recompensas $r$:
+Para obtener el **Modelo de Recompensas** **Esperadas** se calcula el
+promedio ponderado de las recompensas $r$:
 
 +-----+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-------+
 |     | $$R(s,a,s')\mathbb{= E}\left\lbrack R_{t + 1} \mid S_{t} = s,A_{t} = a,S_{t + 1} = s' \right\rbrack = \sum_{r\mathcal{\in R}}^{}r\frac{p(s',r \mid s,a)}{P(s' \mid s,a)}$$ | \(5\) |
@@ -286,63 +292,64 @@ ponderada das recompensas $r$:
 |     | $$\quad$$                                                                                                                                                                  |       |
 +=====+============================================================================================================================================================================+=======+
 
-A Figura 3 apresenta a dinâmica de um MDP para um jogo de Tabuleiro 2 x
-2:
+La Figura 3 presenta la dinámica de un MDP para un juego de Tablero de 2
+x 2:
 
-![**Figura 3** -- Dinâmica de MDP de um
-Tabuleiro](media/image2.jpeg){width="3.9451388888888888in"
+![**3** -- Dinámica de MDP de un
+Tablero](media/image2.jpeg){width="3.9451388888888888in"
 height="2.654166666666667in"}
 
-Este tabuleiro $2 \times 2$ modela duas trajetórias possíveis
-($S_{0} \rightarrow S_{1} \rightarrow S_{3}$ e
-$S_{0} \rightarrow S_{2} \rightarrow S_{3}$) para um robô logístico
-encarregado de coletar peças no almoxarifado (estado $S_{0}$) e
-entregá-las no setor de produção (estado $S_{3}$). As transições
-apresentam recompensas estocásticas, simulando a ocorrência eventual de
-congestionamentos na linha de tráfego dos robôs.
+Este tablero $2 \times 2$ modela dos trayectorias posibles
+($S_{0} \rightarrow S_{1} \rightarrow S_{3}$ y
+$S_{0} \rightarrow S_{2} \rightarrow S_{3}$) para un robot logístico
+encargado de recoger piezas en el almacén (estado $S_{0}$) y entregarlas
+en el sector de producción (estado $S_{3}$). Las transiciones presentan
+recompensas estocásticas, simulando la ocurrencia eventual de
+congestionamientos en la línea de tráfico de los robots.
 
-O pacote para simulação de ambientes ***Gymnasium*** em Python \[2\]
-padroniza uma estrutura de dicionário para definição da Dinâmica do MDP,
-que é aplicada para o Tabuleiro descrito anteriormente, e mostrado na
-Figura 4. Essa estrutura expressa a probabilidade conjunta condicionada
-P(s', r \| s, a) que define a Dinâmica do ambiente do MDP.
+El paquete para simulación de entornos ***Gymnasium*** en Python \[2\]
+estandariza una estructura de diccionario para la definición de la
+Dinámica del MDP, que se aplica al Tablero descrito anteriormente y se
+muestra en la Figura 4. Esta estructura expresa la probabilidad conjunta
+condicionada P(s', r \| s, a) que define la Dinámica del entorno del
+MDP.
 
-![**Figura 4** -- Dicionário Padrão Gymnasium para Dinâmica do
+![**4** -- Diccionario Estándar de Gymnasium para la Dinámica del
 MDP](media/image3.png){width="3.6395833333333334in"
 height="3.2354166666666666in"}
 
-Ressalta-se que o ambiente ***FrozenLake*** do pacote **Gymnasium**
-adota uma codificação distinta para o espaço de ações (0: Esquerda, 1:
-Para baixo, 2: Direita e 3: Para cima) em relação àquela utilizada nas
-Figuras 3 e 4. Desse modo, é necessária a conversão direta dos índices
-ao integrar a dinâmica desse ambiente.
+Se destaca que el entorno ***FrozenLake*** del paquete **Gymnasium**
+adopta una codificación distinta para el espacio de acciones (0:
+Izquierda, 1: Abajo, 2: Derecha y 3: Arriba) respecto de la utilizada en
+las Figuras 3 y 4. Por lo tanto, es necesaria la conversión directa de
+los índices al integrar la dinámica de este entorno.
 
-A estrutura do dicionário da Figura 4 representa o Modelo de Dinâmica do
-MDP em dois níveis de chaveamento: a primeira chave corresponde ao
-estado de origem $s$, enquanto a segunda chave representa a ação
-executada $a$. Para cada par $(s,a)$, o dicionário armazena uma lista de
-tuplas da forma (prob, próximo estado, recompensa, booleano),
-correspondendo respectivamente a
-$\left( p(s',r \mid s,a),\, s',\, r,\,\text{is\_terminal} \right)$. O
-booleano is_terminal indica se a transição vai para um estado terminal
-ou não. A soma das probabilidades $p(s',r \mid s,a)$ de todas as tuplas
-associadas a um mesmo par $(s,a)$ é estritamente unitária
-($\sum_{i}^{}\text{prob}_{i} = 1.0$), garantindo uma distribuição de
-probabilidade válida sobre os resultados estocásticos da ação.
+La estructura del diccionario de la Figura 4 representa el Modelo de
+Dinámica del MDP en dos niveles de claves: la primera clave corresponde
+al estado de origen $s$, mientras que la segunda clave representa la
+acción ejecutada $a$. Para cada par $(s,a)$, el diccionario almacena una
+lista de tuplas de la forma (prob, próximo estado, recompensa,
+booleano), correspondientes respectivamente a
+$\left( p(s',r \mid s,a),\, s',\, r,\,\text{is\_terminal} \right)$. El
+booleano is_terminal indica si la transición va hacia un estado terminal
+o no. La suma de las probabilidades $p(s',r \mid s,a)$ de todas las
+tuplas asociadas a un mismo par $(s,a)$ es estrictamente unitaria
+($\sum_{i}^{}\text{prob}_{i} = 1.0$), garantizando una distribución de
+probabilidad válida sobre los resultados estocásticos de la acción.
 
-## 2.3 -- Política de um Processo de Decisão de Markov (MDP)
+## 2.3 -- Política de un Proceso de Decisión de Markov (MDP)
 
-Em um Processo de Decisão de Markov (MDP), a **política**
+En un Proceso de Decisión de Markov (MDP), la **política**
 $\mathbf{\pi}\left( \mathbf{a}\mathbf{|}\mathbf{s} \right)$ representa
-uma distribuição de probabilidade sobre o conjunto de ações
-$A = \left\{ a_{1},a_{2},\ldots,a_{m} \right\}$ que o agente pode
-escolher quando se encontra em um determinado estado $s.$
+una distribución de probabilidad sobre el conjunto de acciones
+$A = \left\{ a_{1},a_{2},\ldots,a_{m} \right\}$ que el agente puede
+elegir cuando se encuentra en un determinado estado $s.$
 
-Para que seja uma distribuição de probabilidade válida, duas condições
-fundamentais devem ser satisfeitas:
+Para que sea una distribución de probabilidad válida, deben satisfacerse
+dos condiciones fundamentales:
 
-1.  **Não-negatividade:** A probabilidade de escolher qualquer ação
-    individual não pode ser negativa:
+1.  **No negatividad:** La probabilidad de elegir cualquier acción
+    individual no puede ser negativa:
 
 +-----+----------------------------------------------------------------------------------+-------+
 |     | $$p\left( a_{i}|s \right) \geq 0\quad\forall i \in \left\{ 1,\ldots,m \right\}$$ | \(6\) |
@@ -350,8 +357,8 @@ fundamentais devem ser satisfeitas:
 |     | $$\quad$$                                                                        |       |
 +=====+==================================================================================+=======+
 
-2.  **Soma Unitária:** A soma das probabilidades de todas as ações
-    possíveis no estado $s$ deve ser exatamente igual a 1:
+2.  **Suma Unitaria:** La suma de las probabilidades de todas las
+    acciones posibles en el estado $s$ debe ser exactamente igual a 1:
 
 +-----+----------------------------------------------------------+-------+
 |     | $$\sum_{i = 1}^{m}p\left( a_{i}|s \right) = 1$$          | \(7\) |
@@ -359,22 +366,23 @@ fundamentais devem ser satisfeitas:
 |     | $$\quad$$                                                |       |
 +=====+==========================================================+=======+
 
-Existem os seguintes tipos de política em um MDP:
+Existen los siguientes tipos de política en un MDP:
 
-- ***Stochastic Policy* (Estocástica):** O vetor
+- ***Stochastic Policy* (Estocástica):** El vector
   $\left\lbrack p\left( a_{1}|s \right),p\left( a_{2}|s \right),\ldots,p\left( a_{m}|s \right) \right\rbrack$
-  atribui valores contínuos entre $0$ e $1$ para as ações, permitindo
-  exploração e modelagem de incerteza (ex.:
+  asigna valores continuos entre $0$ y $1$ a las acciones, permitiendo
+  exploración y modelado de incertidumbre (ej.:
   $\pi\left( a_{1}|s \right) = 0.7,\pi\left( a_{2}|s \right) = 0.3$).
 
-- ***Deterministic Policy* (Determinística):** É um caso particular em
-  que uma única ação $a_{k}$ recebe probabilidade $1$ e todas as outras
-  recebem $0$ ($\pi\left( a_{k}|s \right) = 1$). Expressa-se diretamente
-  como a função $a = \pi(s)$.
+- ***Deterministic Policy* (Determinística):** Es un caso particular en
+  que una única acción $a_{k}$ recibe probabilidad $1$ y todas las demás
+  reciben $0$ ($\pi\left( a_{k}|s \right) = 1$). Se expresa directamente
+  como la función $a = \pi(s)$.
 
-A **Matriz de Transição de Estados** induzida **---**
-$P^{\pi}(s' \mid s)\ \ para\ um\ MDP\$resulta da combinação do modelo de
-transição $P(s' \mid s,a)$ com uma política específica $\pi(a \mid s)$:
+La **Matriz de Transición de Estados** inducida **---**
+$P^{\pi}(s' \mid s)\ \ \ para\ un\ MDP\$ resulta de la combinación del
+modelo de transición $P(s' \mid s,a)$ con una política específica
+$\pi(a \mid s)$:
 
 +-----+---------------------------------------------------------------------------------+-------+
 |     | $$P^{\pi}(s' \mid s) = \sum_{a \in \mathcal{A}}^{}\pi(a \mid s)P(s' \mid s,a)$$ | \(8\) |
@@ -382,34 +390,34 @@ transição $P(s' \mid s,a)$ com uma política específica $\pi(a \mid s)$:
 |     | $$\quad$$                                                                       |       |
 +=====+=================================================================================+=======+
 
-Sendo assim representa a dinâmica da Cadeia de Markov resultante do
-comportamento do agente (**depende estritamente da política**
+Siendo así, representa la dinámica de la Cadena de Markov resultante del
+comportamiento del agente (**depende estrictamente de la política**
 $\mathbf{\pi}$).
 
-No contexto do problema do robô logístico em um tabuleiro $2 \times 2$
-da Figura 3, a operação da Equação (8) combina a matriz de política
-$\mathbf{\Pi}$ de dimensões $4 \times 4$ (na qual cada linha representa
-um estado $s$ e cada coluna uma ação $a$, tal que
-$\pi(a \mid s) = \mathbf{\Pi}_{s,a}$) com o tensor de transição do
-ambiente $\mathbf{P}$ de dimensões $4 \times 4 \times 4$, correspondente
-a $P(s,a,s') = P(s' \mid s,a)$.
+En el contexto del problema del robot logístico en un tablero
+$2 \times 2$ de la Figura 3, la operación de la Ecuación (8) combina la
+matriz de política $\mathbf{\Pi}$ de dimensiones $4 \times 4$ (en la
+cual cada fila representa un estado $s$ y cada columna una acción $a$,
+tal que $\pi(a \mid s) = \mathbf{\Pi}_{s,a}$) con el tensor de
+transición del entorno $\mathbf{P}$ de dimensiones
+$4 \times 4 \times 4$, correspondiente a $P(s,a,s') = P(s' \mid s,a)$.
 
-A implementação computacional eficiente desta operação em Python é
-realizada por meio da função **np.einsum**, utilizando a notação de
-somatório de Einstein:
+La implementación computacional eficiente de esta operación en Python se
+realiza mediante la función **np.einsum**, utilizando la notación de
+sumatoria de Einstein:
 
 P_estados = np.einsum(\'sa, sad -\> sd\', PI, P).
 
-Para um MDP com n estados e m ações em cada estado o número de políticas
-determinísticas possíveis é dado por $m^{n}$. A seção 3 irá tratar de
-algoritmos que solucionem o problema de encontrar uma política ótima
-para o MDP.
+Para un MDP con n estados y m acciones en cada estado, el número de
+políticas determinísticas posibles está dado por $m^{n}$. La sección 3
+tratará algoritmos que resuelvan el problema de encontrar una política
+óptima para el MDP.
 
-## 2.4 -- Retorno, função de valor de estado e função de ação-valor
+## 2.4 -- Retorno, función de valor de estado y función de acción-valor
 
-Para avaliar a qualidade das decisões a longo prazo, define-se o
-**Retorno Descontado** $G_{t}$ no instante temporal $t$ como a soma
-estocástica acoplada pelo fator de desconto para cada episódio:
+Para evaluar la calidad de las decisiones a largo plazo, se define el
+**Retorno Descontado** $G_{t}$ en el instante temporal $t$ como la suma
+estocástica acoplada por el factor de descuento para cada episodio:
 
 +-----+------------------------------------------------------------------------------------------------------------------------+-------+
 |     | $$G_{t} = \sum_{k = 0}^{\infty}\gamma^{k}R_{t + k + 1} = R_{t + 1} + \gamma R_{t + 2} + \gamma^{2}R_{t + 3} + \ldots$$ | \(9\) |
@@ -417,19 +425,20 @@ estocástica acoplada pelo fator de desconto para cada episódio:
 |     | $$\quad$$                                                                                                              |       |
 +=====+========================================================================================================================+=======+
 
-O fator $\gamma$ possui dupla finalidade: do ponto de vista matemático,
-garante a convergência da série em horizontes infinitos; e do ponto de
-vista conceitual, reflete a preferência temporal do agente (as
-recompensas mais recentes tem peso maior na computo de $G_{t}$).
+El factor $\gamma$ tiene una doble finalidad: desde el punto de vista
+matemático, garantiza la convergencia de la serie en horizontes
+infinitos; y desde el punto de vista conceptual, refleja la preferencia
+temporal del agente (las recompensas más recientes tienen mayor peso en
+el cómputo de $G_{t}$).
 
-A partir do retorno $G_{t}$, a avaliação de uma política
-$\pi\left( a|s \right)$ desdobra-se em duas funções fundamentais: A
-função valor do estado $V_{\pi}(s)\$e a função valor do par estado-ação
-$Q^{\pi}(s,a)$.
+A partir del retorno $G_{t}$, la evaluación de una política
+$\pi\left( a|s \right)$ se desdobla en dos funciones fundamentales: La
+función de valor del estado $V_{\pi}(s)\$y la función de valor del par
+estado-acción $Q^{\pi}(s,a)$.
 
-A **função de valor** **do estado** (*state value function*) para uma
-política $\pi(a \mid s)$ é definida como o valor esperado do retorno
-descontado $G_{t}\$dado o estado em que se encontra $S_{t} = s$:
+La **función de valor** **del estado** (*state value function*) para una
+política $\pi(a \mid s)$ se define como el valor esperado del retorno
+descontado $G_{t}\$ dado el estado en que se encuentra $S_{t} = s$:
 
   --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
          $$V^{\pi}(s) = \mathbb{E}_{\pi}\left\lbrack G_{t}\mspace{6mu} \middle| \mspace{6mu} S_{t} = s \right\rbrack = \mathbb{E}_{\pi}\left\lbrack \sum_{k = 0}^{\infty}\gamma^{k}R_{t + k + 1}\mspace{6mu} \middle| \mspace{6mu} S_{t} = s \right\rbrack\quad$$   \(10\)
@@ -437,10 +446,10 @@ descontado $G_{t}\$dado o estado em que se encontra $S_{t} = s$:
 
   --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-A **função de valor de estado-ação** (*action-state value function*)
-para uma política $\pi(a \mid s)$ é definida como o valor esperado do
-retorno descontado $G_{t}\$dado o estado em que se encontra $S_{t} = s\$
-e a ação executada nesse estado $A_{t} = a$.
+La **función de valor de estado-acción** (*action-state value function*)
+para una política $\pi(a \mid s)$ se define como el valor esperado del
+retorno descontado $G_{t}\$ dado el estado en que se encuentra
+$S_{t} = s\$ y la acción ejecutada en ese estado $A_{t} = a$.
 
 +-----+-----------------------------------------------------------------------------------------------------------------------------------------------------+--------+
 |     | $$Q^{\pi}(s,a) = \mathbb{E}_{\pi}\left\lbrack G_{t}\mspace{6mu} \middle| \mspace{6mu} S_{t} = s,A_{t} = a \right\rbrack\ $$                         | \(11\) |
@@ -450,7 +459,7 @@ e a ação executada nesse estado $A_{t} = a$.
 |     | $$\quad$$                                                                                                                                           |        |
 +=====+=====================================================================================================================================================+========+
 
-As duas funções de valor se relacionam da seguinte forma:
+Las dos funciones de valor se relacionan de la siguiente manera:
 
 +-----+--------------------------------------------------------------------------+--------+
 |     | $$V^{\pi}(s) = \sum_{a \in \mathcal{A}}^{}\pi(a \mid s)\, Q^{\pi}(s,a)$$ | \(12\) |
@@ -458,25 +467,26 @@ As duas funções de valor se relacionam da seguinte forma:
 |     | $$\quad$$                                                                |        |
 +=====+==========================================================================+========+
 
-$V^{\pi}(s)$é a **média ponderada** dos Q-valores, na qual os pesos são
-as probabilidades de escolher cada ação a em cada estado s.
+$V^{\pi}(s)$ es el **promedio ponderado** de los Q-valores, en el cual
+los pesos son las probabilidades de elegir cada acción a en cada estado
+s.
 
-**Obs:** As funções de $valor\ de\ estado\ V(s)$ e de estado-ação
-$Q(s,a)$ são definidas *estritamente em relação a uma política
-específica* $\pi(a/s)$. Sem fixar ou assumir uma política $\pi$, o valor
-esperado dos retornos futuros não pode ser calculado, pois não haveria
-como saber com qual probabilidade o agente escolheria as ações nos
-estados subsequentes.
+**Obs:** Las funciones de $valor\ de\ estado\ V(s)$ y de estado-acción
+$Q(s,a)$ se definen *estrictamente con relación a una política
+específica* $\pi(a/s)$. Sin fijar o asumir una política $\pi$, el valor
+esperado de los retornos futuros no puede calcularse, pues no habría
+forma de saber con qué probabilidad el agente elegiría las acciones en
+los estados subsiguientes.
 
-## 2.5 -- Política Ótima
+## 2.5 -- Política Óptima
 
-No contexto dos Processos de Decisão de Markov (MDP), a **política ótima
-(**$\pi^{*}$**)** define a estratégia ideal de tomada de decisão. O seu
-objetivo principal é orientar as ações do agente a cada estado de modo a
-maximizar a expectativa do retorno acumulado descontado ao longo de sua
-trajetória no ambiente.
+En el contexto de los Procesos de Decisión de Markov (MDP), la
+**política óptima (**$\pi^{*}$**)** define la estrategia ideal de toma
+de decisiones. Su objetivo principal es orientar las acciones del agente
+en cada estado de modo de maximizar la expectativa del retorno acumulado
+descontado a lo largo de su trayectoria en el entorno.
 
-Uma política $\pi^{*}$ é ótima se:
+Una política $\pi^{*}$ es óptima si:
 
   -------------------------------------------------------------------------------
          $$V^{\pi^{*}}(s) \geq V^{\pi}(s)\ \forall s,\forall\pi\quad$$   \(13\)
@@ -484,49 +494,50 @@ Uma política $\pi^{*}$ é ótima se:
 
   -------------------------------------------------------------------------------
 
-Ou seja, **em todo estado**, o valor da política ótima é maior ou igual
-ao de qualquer outra política. Na próxima seção veremos alternativas de
-solução para obtenção da politica ótima para um MDP.
+Es decir, **en todo estado**, el valor de la política óptima es mayor o
+igual que el de cualquier otra política. En la próxima sección veremos
+alternativas de solución para obtener la política óptima de un MDP.
 
-# Estratégias de Solução:
+# Estrategias de Solución:
 
-## 3.1 -- Equações de Bellman para as funções de valor do estado e de ação-estado
+## 3.1 -- Ecuaciones de Bellman para las funciones de valor del estado y de acción-estado
 
-O problema de encontrar uma solução ótima para decisões sequenciais com
-modelo conhecido (***Model Based***) foi amplamente estudado por Bellman
-\[6\], que denominou essa abordagem como **Programação Dinâmica**. A
-ideia central baseia-se em abordar o problema de forma recursiva e
-reaproveitar os resultados parciais armazenados em memória para obter a
-convergência rumo à política ótima de ações, conforme formulado nos
-Processos de Decisão de Markov (MDP). O termo ***programação***
-refere-se ao planejamento do encadeamento de decisões no tempo, enquanto
-***dinâmica*** expressa o caráter evolutivo e adaptativo dos cálculos
-recursivos. A partir dessa formulação, deduz-se a **Equação de
-Bellman**, que se aplica tanto ao cálculo da função de valor do estado
-$V(s)$ quanto à função de estado-ação $Q(s,a)$.
+El problema de encontrar una solución óptima para decisiones
+secuenciales con modelo conocido (***Model Based***) fue ampliamente
+estudiado por Bellman \[6\], quien denominó a este enfoque
+**Programación Dinámica**. La idea central consiste en abordar el
+problema de forma recursiva y reaprovechar los resultados parciales
+almacenados en memoria para obtener la convergencia hacia la política
+óptima de acciones, conforme se formula en los Procesos de Decisión de
+Markov (MDP). El término ***programación*** se refiere a la
+planificación del encadenamiento de decisiones en el tiempo, mientras
+que ***dinámica*** expresa el carácter evolutivo y adaptativo de los
+cálculos recursivos. A partir de esta formulación, se deduce la
+**Ecuación de Bellman**, que se aplica tanto al cálculo de la función de
+valor del estado $V(s)$ como a la función de estado-acción $Q(s,a)$.
 
-### Equação de Bellman para$\mathbf{V}^{\mathbf{\pi}}\left( \mathbf{s} \right)$
+### Ecuación de Bellman para$\mathbf{V}^{\mathbf{\pi}}\left( \mathbf{s} \right)$
 
-Partimos da definição de $V^{\pi}(s)$ (equação (10)) para obter a
-Equação de Bellman para a função de valor do estado:
+Partimos de la definición de $V^{\pi}(s)$ (ecuación (10)) para obtener
+la Ecuación de Bellman para la función de valor del estado:
 
 $$V^{\pi}(s) = \mathbb{E}_{\pi}\left\lbrack G_{t} \mid S_{t} = s \right\rbrack = \mathbb{E}_{\pi}\left\lbrack R_{t + 1} + \gamma R_{t + 2} + \gamma^{2}R_{t + 3} + \cdots \mid S_{t} = s \right\rbrack
 $$
 
-Podemos fatorar o primeiro termo:
+Podemos factorizar el primer término:
 
 $$V^{\pi}(s) = \mathbb{E}_{\pi}\left\lbrack R_{t + 1} \mid S_{t} = s \right\rbrack + \gamma\mathbb{E}_{\pi}\left\lbrack R_{t + 2} + \gamma R_{t + 3} + \cdots \mid S_{t} = s \right\rbrack
 $$
 
-Mas a partir de $t + 1$, o estado é $S_{t + 1}$, e o retorno a partir
-dali é exatamente $G_{t + 1}$. Então:
+Pero a partir de $t + 1$, el estado es $S_{t + 1}$, y el retorno a
+partir de allí es exactamente $G_{t + 1}$. Entonces:
 
 $$V^{\pi}(s) = \mathbb{E}_{\pi}\left\lbrack R_{t + 1} \mid S_{t} = s \right\rbrack + \gamma\mathbb{E}_{\pi}\left\lbrack G_{t + 1} \mid S_{t} = s \right\rbrack
 $$
 
-Agora usamos a **lei da esperança total,** condicionando
-em $S_{t + 1} = s'$ e
-em $A_{t} = a,\ e\ obtemos\ \mathbf{Equação\ de\ Bellman\ para\ }V^{\pi}\ (forma\ explícita)$:
+Ahora usamos la **ley de la esperanza total,** condicionando en
+$S_{t + 1} = s'$ y en
+$A_{t} = a,\ y\ obtenemos\ \mathbf{Ecuación\ de\ Bellman\ para\ }V^{\pi}\ \ (forma\ explícita)$:
 
   -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
          $$V^{\pi}(s) = \sum_{a \in \mathcal{A}}^{}\pi(a \mid s)\sum_{s' \in \mathcal{S}}^{}P\left( s',\ r\mspace{6mu} \mid s,\ a \right)\left\lbrack R\left( s,\mspace{6mu} a,\mspace{6mu} s' \right) + \gamma V^{\pi}\left( s' \right) \right\rbrack$$   \(14\)
@@ -535,16 +546,16 @@ em $A_{t} = a,\ e\ obtemos\ \mathbf{Equação\ de\ Bellman\ para\ }V^{\pi}\ (fo
   -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 ### $$\mathbf{
-}$$Equação de Bellman para $\mathbf{V}^{\mathbf{\pi}}\left( \mathbf{s} \right)$ Vetorizada
+}$$Ecuación de Bellman para $\mathbf{V}^{\mathbf{\pi}}\left( \mathbf{s} \right)$ Vectorizada
 
-Para obtenção da **forma vetorizada** da
-$\mathbf{Equação\ de\ Bellman\ para\ }V^{\pi}$**,** expandimos a equação
-(14), como se segue:
+Para obtener la **forma vectorizada** de la
+$\mathbf{Ecuación\ de\ Bellman\ para\ }V^{\pi}$**,** expandimos la
+ecuación (14), como sigue:
 
 $$V^{\pi}(s) = \sum_{a \in \mathcal{A}}^{}\pi(a \mid s)\sum_{s' \in \mathcal{S}}^{}P(s',r \mid s,a)R(s,a,s') + \gamma\sum_{a \in \mathcal{A}}^{}\pi(a \mid s)\sum_{s' \in \mathcal{S}}^{}P(s',r \mid s,a)V^{\pi}(s')$$
 
-O primeiro termo representa a recompensa imediata esperada no estado $s$
-ao seguir a política $\pi$**.**
+El primer término representa la recompensa inmediata esperada en el
+estado $s$ al seguir la política $\pi$**.**
 
 Definimos $R^{\pi}(s)$ como:
 
@@ -555,9 +566,9 @@ Definimos $R^{\pi}(s)$ como:
   -------------------------------------------------------------------------------------------------------------------------------------
 
 - Para cada estado $s_{i} \in \mathcal{S}$,
-  $R^{\pi}\left( s_{i} \right)$ gera um valor escalar.
+  $R^{\pi}\left( s_{i} \right)$ genera un valor escalar.
 
-- Agrupando todos os estados em um vetor de dimensão
+- Agrupando todos los estados en un vector de dimensión
   $|\mathcal{S}| \times 1$:
 
 $$R^{\pi} = \begin{bmatrix}
@@ -567,12 +578,12 @@ R^{\pi}\left( s_{2} \right) \\
 R^{\pi}\left( s_{|\mathcal{S}|} \right)
 \end{bmatrix}$$
 
-No segundo termo, observe a parte que multiplica $V^{\pi}(s')$:
+En el segundo término, observe la parte que multiplica a $V^{\pi}(s')$:
 
 $$\gamma\sum_{s' \in \mathcal{S}}^{}\left( \sum_{a \in \mathcal{A}}^{}\pi(a \mid s)P(s' \mid s,a) \right)V^{\pi}(s')$$
 
-Definimos a probabilidade de transição direta do estado $s$ para $s'$
-sob a política $\pi$ como:
+Definimos la probabilidad de transición directa del estado $s$ a $s'$
+bajo la política $\pi$ como:
 
   ------------------------------------------------------------------------------------------------------
          $$P^{\pi}(s' \mid s) \doteq \sum_{a \in \mathcal{A}}^{}\pi(a \mid s)P(s' \mid s,a)$$   (14.b)
@@ -580,11 +591,11 @@ sob a política $\pi$ como:
 
   ------------------------------------------------------------------------------------------------------
 
-Esta é a entrada da linha $s$ e coluna $s'$ na matriz de transição
-$P^{\pi}$.
+Esta es la entrada de la fila $s$ y columna $s'$ en la matriz de
+transición $P^{\pi}$.
 
-Para um ambiente com $N = |\mathcal{S}|$ estados, $P^{\pi}$ é uma matriz
-estocástica de dimensão $N \times N$:
+Para un entorno con $N = |\mathcal{S}|$ estados, $P^{\pi}$ es una matriz
+estocástica de dimensión $N \times N$:
 
 $$P^{\pi} = \begin{bmatrix}
 P^{\pi}\left( s_{1} \mid s_{1} \right) & P^{\pi}\left( s_{2} \mid s_{1} \right) & \ldots & P^{\pi}\left( s_{N} \mid s_{1} \right) \\
@@ -593,12 +604,12 @@ P^{\pi}\left( s_{1} \mid s_{2} \right) & P^{\pi}\left( s_{2} \mid s_{2} \right) 
 P^{\pi}\left( s_{1} \mid s_{N} \right) & P^{\pi}\left( s_{2} \mid s_{N} \right) & \ldots & P^{\pi}\left( s_{N} \mid s_{N} \right)
 \end{bmatrix}$$
 
-Substituindo $R^{\pi}(s)$ e $P^{\pi}(s' \mid s)$ de volta na equação
-escalar:
+Sustituyendo $R^{\pi}(s)$ y $P^{\pi}(s' \mid s)$ de vuelta en la
+ecuación escalar:
 
 $$V^{\pi}(s) = R^{\pi}(s) + \gamma\sum_{s' \in \mathcal{S}}^{}P^{\pi}(s' \mid s)V^{\pi}(s')$$
 
-Em notação matricial para todos os estados simultaneamente:
+En notación matricial para todos los estados simultáneamente:
 
   --------------------------------------------------------------------------
          $$V^{\pi} = R^{\pi} + \gamma P^{\pi}V^{\pi}$$              \(15\)
@@ -606,26 +617,26 @@ Em notação matricial para todos os estados simultaneamente:
 
   --------------------------------------------------------------------------
 
-Onde:
+Donde:
 
-- $V^{\pi}$ = vetor $\mid S \mid \times 1$
+- $V^{\pi}$ = vector $\mid S \mid \times 1$
 
-- $R^{\pi}$ = vetor $\mid S \mid \times 1$ com recompensas esperadas
-  para cada estado (pela equação (14.a))
+- $R^{\pi}$ = vector $\mid S \mid \times 1$ con recompensas esperadas
+  para cada estado (por la ecuación (14.a))
 
-- $P^{\pi}$ = matriz $\mid S \mid \times \mid S \mid$ de probabilidades
-  de transição (pela equação (14.b))
+- $P^{\pi}$ = matriz $\mid S \mid \times \mid S \mid$ de probabilidades
+  de transición (por la ecuación (14.b))
 
-A equação para $V^{\pi}\$pode ser resolvida de forma recursiva partindo
-de um valor inicial\
+La ecuación para $V^{\pi}\$puede resolverse de forma recursiva partiendo
+de un valor inicial\
 $$V_{0}^{\pi} = \begin{bmatrix}
 V_{0}\left( s_{1} \right) \\
 V_{0}\left( s_{2} \right) \\
  \vdots \\
 V_{0}\left( s_{N} \right)
 \end{bmatrix}
-$$por ser uma função de ponto fixo utilizando a equação (15) ou por
-inversão de matrizes, como a seguir**:**
+$$por ser una función de punto fijo, utilizando la ecuación (15) o por
+inversión de matrices, como se muestra a continuación**:**
 
   ------------------------------------------------------------------------------
          $$V^{\pi} = \left( I - \gamma P^{\pi} \right)^{- 1}R^{\pi}$$   \(16\)
@@ -633,38 +644,39 @@ inversão de matrizes, como a seguir**:**
 
   ------------------------------------------------------------------------------
 
-*Onde* $I$ *é a matriz identidade*
-$|\mathcal{S}| \times |\mathcal{S}|$*. A matriz*
-$\left( I - \gamma P^{\pi} \right)$ *é sempre invertível para*
+*Donde* $I$ *es la matriz identidad*
+$|\mathcal{S}| \times |\mathcal{S}|$*. La matriz*
+$\left( I - \gamma P^{\pi} \right)$ *es siempre invertible para*
 $0 \leq \gamma < 1$*)*
 
-### Condição de contorno da Equação de Bellman para estados terminais
+### Condición de contorno de la Ecuación de Bellman para estados terminales
 
-É comum estabelecer recompensa R igual a zero para permanecer em um
-**estado terminal**. Dessa forma a equação para o cálculo de
-$V^{\pi}$ficando no estado terminal se resume a:
+Es común establecer la recompensa R igual a cero por permanecer en un
+**estado terminal**. De esta forma, la ecuación para el cálculo de
+$V^{\pi}$ permaneciendo en el estado terminal se reduce a:
 
 $$V^{\pi} = 0 + \gamma P^{\pi}V^{\pi}$$
 
-Como $\gamma\  < \ 1$ então $V^{\pi}$ (terminal) vai tender pra zero - o
-que pode levar k passos do algoritmo devido ao fator $\gamma^{k}$ que
-aparece na recursão - é comum estabelecer $V^{\pi}$ igual a zero como
-condição de contorno para todos os estados terminais.
+Como $\gamma\  < \ 1$ entonces $V^{\pi}$ (terminal) tenderá a cero - lo
+que puede llevar k pasos del algoritmo debido al factor $\gamma^{k}$ que
+aparece en la recursión - es común establecer $V^{\pi}$ igual a cero
+como condición de contorno para todos los estados terminales.
 
-### Equação de Bellman para$\mathbf{Q}^{\mathbf{\pi}}\left( \mathbf{s},\mathbf{a} \right)$
+### Ecuación de Bellman para$\mathbf{Q}^{\mathbf{\pi}}\left( \mathbf{s},\mathbf{a} \right)$
 
-Para obter a função de estado-ação partimos da equação (11):
+Para obtener la función de estado-acción partimos de la ecuación (11):
 
 $$Q^{\pi}\left( s,a \right) = \mathbb{E}_{\pi}\left\lbrack G_{t}, \mid S_{t} = sA_{t} = a \right\rbrack
 $$
 
-E fazendo o mesmo tipo de expansão realizado para $V^{\pi}(s)$, obtemos:
+Y haciendo el mismo tipo de expansión realizado para $V^{\pi}(s)$,
+obtenemos:
 
 $$Q^{\pi}\left( s,a \right) = \sum_{s'\mathcal{\in S}}^{}P\left( s',r \mid s,\ a \right)\left\lbrack R\left( s,a,s' \right) + \gamma\sum_{a'\mathcal{\in A}}^{}\pi\left( a' \mid s' \right)Q^{\pi}\left( s',a' \right) \right\rbrack
 $$
 
-Substituindo a expressão correspondente por  $V^{\pi}$ usando-se a
-equação (12) chega-se em:
+Sustituyendo la expresión correspondiente a $V^{\pi}$ mediante la
+ecuación (12) se llega a:
 
   ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
          $$Q^{\pi}\left( s,a \right) = \sum_{s'}^{}P\left( s',r\  \mid s,\ a \right)\left\lbrack R\left( s,a,s' \right) + \gamma V^{\pi}\left( s' \right) \right\rbrack$$   \(17\)
@@ -673,37 +685,37 @@ equação (12) chega-se em:
   ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 ### $$\mathbf{
-}$$Equação de Bellman para $\mathbf{Q}^{\mathbf{\pi}}\left( \mathbf{s},\mathbf{a} \right)$ na forma vetorizada
+}$$Ecuación de Bellman para $\mathbf{Q}^{\mathbf{\pi}}\left( \mathbf{s},\mathbf{a} \right)$ en la forma vectorizada
 
-O desenvolvimento da Equação de Bellman na forma vetorizada admite duas
-abordagens distintas, a depender do tratamento dado ao espaço de
-dimensões envolvidas
+El desarrollo de la Ecuación de Bellman en la forma vectorizada admite
+dos enfoques distintos, según el tratamiento dado al espacio de
+dimensiones involucradas
 $\left( \mathcal{S},\mathcal{A},\mathcal{S}' \right)$:
 
-- **Forma Achatada**
+- **Forma Aplanada**
   $\left( \mathcal{S} \times \mathcal{A} \right) \times \mathcal{S}'$**:**
-  As dimensões de estado e ação originais são colapsadas em um espaço
-  linearizado $2\text{D}$ de tamanho
-  $|\mathcal{S}| \cdot |\mathcal{A}|$. Essa transformação reduz o
-  operador de transição a uma matriz bidimensional, o que possibilita a
-  **solução analítica em forma fechada por inversão direta de matrizes**
-  --- ainda que restrita a problemas de pequena escala devido ao custo
-  computacional
+  Las dimensiones de estado y acción originales se colapsan en un
+  espacio linealizado $2\text{D}$ de tamaño
+  $|\mathcal{S}| \cdot |\mathcal{A}|$. Esta transformación reduce el
+  operador de transición a una matriz bidimensional, lo que posibilita
+  la **solución analítica en forma cerrada por inversión directa de
+  matrices** --- aunque restringida a problemas de pequeña escala debido
+  al costo computacional
   $O\left( \left( |\mathcal{S}||\mathcal{A}| \right)^{3} \right)$.
 
-- **Forma Não Achatada**
-  $\left( \mathcal{S},\mathcal{A},\mathcal{S}' \right)$**:** Preserva-se
-  a estrutura nativa dos espaços por meio de um tensor de ordem 3.
-  Embora essa formulação impeça a inversão matricial direta, ela permite
-  **aproveitar plenamente o paralelismo de execução em GPUs** via
-  operações de contração tensorial (como a operação de Einstein einsum),
-  tornando-se a escolha ideal para avaliação de políticas por métodos
-  iterativos de ponto fixo.
+- **Forma No Aplanada**
+  $\left( \mathcal{S},\mathcal{A},\mathcal{S}' \right)$**:** Se preserva
+  la estructura nativa de los espacios mediante un tensor de orden 3.
+  Aunque esta formulación impide la inversión matricial directa, permite
+  **aprovechar plenamente el paralelismo de ejecución en GPUs** mediante
+  operaciones de contracción tensorial (como la operación de Einstein
+  einsum), convirtiéndose en la elección ideal para la evaluación de
+  políticas por métodos iterativos de punto fijo.
 
-### Equação de Bellman para $\mathbf{Q}^{\mathbf{\pi}}\left( \mathbf{s},\mathbf{a} \right)$ na forma vetorizada achatada
+### Ecuación de Bellman para $\mathbf{Q}^{\mathbf{\pi}}\left( \mathbf{s},\mathbf{a} \right)$ en la forma vectorizada aplanada
 
-Substituição de $V^{\pi}(s')$ da equação (12) em
-$Q^{\pi}(s,a)\ da\ equação\ (17)$**:**
+Sustitución de $V^{\pi}(s')$ de la ecuación (12) en
+$Q^{\pi}(s,a)\ \ de\ la\ ecuación\ (17)$**:**
 
   ---------------------------------------------------------------------------------------------------------------------------------------------------------------------
          $$Q^{\pi}(s,a) = \sum_{s'}^{}P(s' \mid s,a)\left\lbrack R(s,a,s') + \gamma\sum_{a' \in \mathcal{A}}^{}\pi(a' \mid s')Q^{\pi}(s',a') \right\rbrack$$   (17.a)
@@ -711,11 +723,11 @@ $Q^{\pi}(s,a)\ da\ equação\ (17)$**:**
 
   ---------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-Expansão dos Termos:
+Expansión de los Términos:
 
 $$Q^{\pi}(s,a) = \underset{R(s,a)}{\overset{\sum_{s'}^{}P(s' \mid s,a)R(s,a,s')}{︸}} + \gamma\sum_{s'}^{}P(s' \mid s,a)\sum_{a' \in \mathcal{A}}^{}\pi(a' \mid s')Q^{\pi}(s',a')$$
 
-Reescrevendo com o Termo de Recompensa Esperada $R(s,a)$**:**
+Reescribiendo con el Término de Recompensa Esperada $R(s,a)$**:**
 
   -------------------------------------------------------------------------------------------------------------------------
          $$Q^{\pi}(s,a) = R(s,a) + \gamma\sum_{s'}^{}{\sum_{a'}^{}P}(s' \mid s,a)\pi(a' \mid s')Q^{\pi}(s',a')$$     (17.b)
@@ -724,34 +736,34 @@ Reescrevendo com o Termo de Recompensa Esperada $R(s,a)$**:**
 
   -------------------------------------------------------------------------------------------------------------------------
 
-Onde:
+Donde:
 
-- ${Q_{flat}^{\pi}\  = \ Q}^{\pi}$ (s, a) =
-  vetor $\mid S \mid \cdot \mid A \mid \times 1$
+- ${Q_{flat}^{\pi}\  = \ Q}^{\pi}$ (s, a) = vector
+  $\mid S \mid \cdot \mid A \mid \times 1$
 
-- $R_{flat}\  = \ R(s,\ a)$ =
-  vetor $\mid S \mid \cdot \mid A \mid \times 1$ com recompensas médias
-  tal que:
+- $R_{flat}\  = \ R(s,\ a)$ = vector
+  $\mid S \mid \cdot \mid A \mid \times 1$ con recompensas promedio tal
+  que:
 
 $$R(s,\ a)\  = \sum_{s'}^{}P\left( s',\mspace{6mu} r\  \mid s,\ a \right).R\left( s,\mspace{6mu} a,\mspace{6mu} s' \right)$$
 
-- $P_{flat}$ =
-  matriz $\mid S \mid \cdot \mid A \mid \times \mid S \mid \mid A \mid$ de
-  probabilidades de transição composta
+- $P_{flat}$ = matriz
+  $\mid S \mid \cdot \mid A \mid \times \mid S \mid \mid A \mid$ de
+  probabilidades de transición compuesta
 
 $$P_{flat}\left( (s,a),(s',a') \right) = P(s' \mid s,a) \cdot \pi(a' \mid s')$$
 
-A probabilidade de sair do par $(s,a)$ e ir para o par $(s',a')$ ocorre
-em dois passos dependentes em cadeia:
+La probabilidad de salir del par $(s,a)$ e ir al par $(s',a')$ ocurre en
+dos pasos dependientes encadenados:
 
-- O ambiente transita do estado $s$ para $s'$ dada a ação $a$ com
-  probabilidade $P(s' \mid s,a)$.
+- El entorno transita del estado $s$ a $s'$ dada la acción $a$ con
+  probabilidad $P(s' \mid s,a)$.
 
-- Chegando em $s'$, o agente escolhe a ação $a'$ dada a política com
-  probabilidade $\pi(a' \mid s')$
+- Al llegar a $s'$, el agente elige la acción $a'$ dada la política con
+  probabilidad $\pi(a' \mid s')$
 
-- Construímos direto uma **única matriz quadrada** $P_{flat}$ **de
-  dimensão** $(SA \times SA)$:
+- Construimos directamente una **única matriz cuadrada** $P_{flat}$ **de
+  dimensión** $(SA \times SA)$:
 
 - $P_{flat} = \begin{bmatrix}
   P\left( s_{1}'|s_{1},a_{1} \right)\pi\left( a_{1}'|s_{1}' \right) & P\left( s_{1}'|s_{1},a_{1} \right)\pi\left( a_{2}'|s_{1}' \right) & \ldots & P\left( s_{N}'|s_{1},a_{1} \right)\pi\left( a_{M}'|s_{N}' \right) \\
@@ -760,8 +772,8 @@ em dois passos dependentes em cadeia:
   P\left( s_{1}'|s_{M},a_{M} \right)\pi\left( a_{1}'|s_{1}' \right) & \ldots & \ldots & P\left( s_{N}'|s_{M},a_{M} \right)\pi\left( a_{M}'|s_{N}' \right)
   \end{bmatrix}$
 
-A solução por inversão para o caso vetorial achatado é mostrada a
-seguir:
+La solución por inversión para el caso vectorial aplanado se muestra a
+continuación:
 
   --------------------------------------------------------------------------------------------
          $$Q_{flat}^{\pi} = \left( I_{SA} - \gamma P_{flat} \right)^{- 1}R_{flat}$$   \(19\)
@@ -769,8 +781,8 @@ seguir:
 
   --------------------------------------------------------------------------------------------
 
-Para obtenção de $Q^{\pi}$ diretamente de $V^{\pi}\ em\$notação
-vetorial/tensorial combinamos as equações (14.b) e (17.b):
+Para obtener $Q^{\pi}$ directamente de $V^{\pi}\ em\$notación
+vectorial/tensorial combinamos las ecuaciones (14.b) y (17.b):
 
   --------------------------------------------------------------------------------------------
          $$Q^{\pi}(s,a) = R(s,a) + \gamma\sum_{s'}^{}P(s' \mid s,a)\, V^{\pi}(s')$$     (19.a)
@@ -779,37 +791,37 @@ vetorial/tensorial combinamos as equações (14.b) e (17.b):
 
   --------------------------------------------------------------------------------------------
 
-onde:
+donde:
 
-- $R_{flat} \in \mathbb{R}^{SA}$ (recompensas achatadas), (S.A, )
+- $R_{flat} \in \mathbb{R}^{SA}$ (recompensas aplanadas), (S.A, )
 
 - $P \in \mathbb{R}^{SA \times S}$ ($P(s' \mid s,a)$), (S.A, S)
 
 - $V^{\pi} \in \mathbb{R}^{S}$, (S, )
 
-- $Q^{\pi} \in \mathbb{R}^{SA}$  , (S.A, )
+- $Q^{\pi} \in \mathbb{R}^{SA}$ , (S.A, )
 
-O produto $\gamma\text{ }P\text{ }V^{\pi}$ dá um vetor
-em $\mathbb{R}^{SA}$, com entrada $\left( s,a \right)$ equivalente a
- $\gamma\sum_{s'}^{}P\left( s', \mid sa \right)V^{\pi}\left( s' \right)$
-e compatível para somar com  $R$ e obter o $Q^{\pi}$.
+El producto $\gamma\text{ }P\text{ }V^{\pi}$ da un vector en
+$\mathbb{R}^{SA}$, con entrada $\left( s,a \right)$ equivalente a
+$\gamma\sum_{s'}^{}P\left( s', \mid sa \right)V^{\pi}\left( s' \right)$
+y compatible para sumar con $R$ y obtener la $Q^{\pi}$.
 
-### Equação de Bellman para $\mathbf{Q}^{\mathbf{\pi}}\left( \mathbf{s},\mathbf{a} \right)$ na forma vetorizada não achatada
+### Ecuación de Bellman para $\mathbf{Q}^{\mathbf{\pi}}\left( \mathbf{s},\mathbf{a} \right)$ en la forma vectorizada no aplanada
 
-Partimos as equação (19.a) na qual a operação
-$\sum_{s'}^{}P(s' \mid s,a)V^{\pi}(s')$ representa uma **contração
-tensorial** entre a 3ª dimensão de $T$ e o vetor $V^{\pi}$, onde:
+Partimos de la ecuación (19.a) en la cual la operación
+$\sum_{s'}^{}P(s' \mid s,a)V^{\pi}(s')$ representa una **contracción
+tensorial** entre la 3ª dimensión de $T$ y el vector $V^{\pi}$, donde:
 
-- **Tensor de Transição (**$T$**):** Tensor de ordem 3 de dimensão
-  $(S,A,S)$, onde $T_{s,a,s'} = P(s' \mid s,a)$.
+- **Tensor de Transición (**$T$**):** Tensor de orden 3 de dimensión
+  $(S,A,S)$, donde $T_{s,a,s'} = P(s' \mid s,a)$.
 
-- **Matriz de Recompensa Esperada (**$R$**):** Matriz de dimensão
-  $(S,\ A)$, onde $R_{s,a} = R(s,a)$.
+- **Matriz de Recompensa Esperada (**$R$**):** Matriz de dimensión
+  $(S,\ A)$, donde $R_{s,a} = R(s,a)$.
 
-- **Vetor de Valores de Estado (**$V^{\pi}$**):** Vetor de dimensão
+- **Vector de Valores de Estado (**$V^{\pi}$**):** Vector de dimensión
   $(S,)$.
 
-- **Matriz de Valores de Ação (**$Q^{\pi}$**):** Matriz de dimensão
+- **Matriz de Valores de Acción (**$Q^{\pi}$**):** Matriz de dimensión
   $(S,\ A)$.
 
   ---------------------------------------------------------------------------------------------
@@ -818,11 +830,11 @@ tensorial** entre a 3ª dimensão de $T$ e o vetor $V^{\pi}$, onde:
 
   ---------------------------------------------------------------------------------------------
 
-A equação (21) pode ser apresentada na forma de Eisntein como a soma
-ponderada dos produtos entre fatias do Tensor T e os valores individuais
-$V_{n}^{\pi}$ para todos os possíveis próximos estados s' que são
-utilizados como pesos nessa soma. Em notação de convenção de somatório
-de Einstein ( xp.einsum(\'san,n-\>sa\', T, V) **):**
+La ecuación (21) puede presentarse en la forma de Einstein como la suma
+ponderada de los productos entre rebanadas del Tensor T y los valores
+individuales $V_{n}^{\pi}$ para todos los posibles siguientes estados s'
+que se utilizan como pesos en esa suma. En notación de convención de
+sumatoria de Einstein ( xp.einsum(\'san,n-\>sa\', T, V) **):**
 
   ---------------------------------------------------------------------------------------------
          $$Q_{s,a}^{\pi} = R_{s,a} + \gamma\sum_{n = 1}^{S}T_{s,a,n}\, V_{n}^{\pi}$$   \(22\)
@@ -830,35 +842,36 @@ de Einstein ( xp.einsum(\'san,n-\>sa\', T, V) **):**
 
   ---------------------------------------------------------------------------------------------
 
-## 3.2 -- Equações de Bellman para obtenção da Política Ótima
+## 3.2 -- Ecuaciones de Bellman para la obtención de la Política Óptima
 
-### Equação de Bellman Ótima para a função de valor do estado
+### Ecuación de Bellman Óptima para la función de valor del estado
 
-O próximo passo será adaptar as equações obtidas anteriormente para
-obtenção da política ótima. Se eu estou no estado $s$ e quero maximizar
-meu retorno futuro, devo escolher a ação que dá o maior Q-valor:
+El siguiente paso será adaptar las ecuaciones obtenidas anteriormente
+para obtener la política óptima. Si estoy en el estado $s$ y quiero
+maximizar mi retorno futuro, debo elegir la acción que da el mayor
+Q-valor:
 
-$$\text{Melhor~ação em~}s = \arg\max_{a}Q^{\pi}\left( s,a \right)
+$$\text{Mejor acción en }s = \arg\max_{a}Q^{\pi}\left( s,a \right)
 $$
 
-O **valor máximo** que posso obter em $s$ é:
+El **valor máximo** que puedo obtener en $s$ es:
 
 $$\max_{a}{\ Q}^{\pi}\left( s,a \right)
 $$
 
-Para uma política **ótima** $\pi^{*}$, o agente **sempre** escolhe a
-ação que maximiza $Q^{\pi^{*}}\left( s,a \right)$:
+Para una política **óptima** $\pi^{*}$, el agente **siempre** elige la
+acción que maximiza $Q^{\pi^{*}}\left( s,a \right)$:
 
 $$\pi^{*}(a \mid s) = \left\{ \begin{matrix}
 1 & \text{se~}a = \arg\max_{a}Q^{\pi^{*}}\left( s,a \right) \\
-0 & \text{caso~contr}\overset{ˊ}{\text{a}}\text{rio}
+0 & \text{en otro caso}
 \end{matrix} \right.\ 
 $$
 
-Ou seja, a política ótima é **determinística** e **gulosa
-(*greedy*)** em relação a $Q^{*}$.
+Es decir, la política óptima es **determinística** y **voraz
+(*greedy*)** con respecto a $Q^{*}$.
 
-Portanto:
+Por lo tanto:
 
   --------------------------------------------------------------------------
          $$V^{*}(s) = \max_{a}{\ Q}^{*}\left( s,a \right)$$         \(23\)
@@ -866,34 +879,34 @@ Portanto:
 
   --------------------------------------------------------------------------
 
-Isso difere da relação para uma política genérica estocástica, que é
-expressa por uma **média
-ponderada** ($\sum_{a}^{}\pi(a \mid s)Q^{\pi}\left( s,a \right)$). No
-caso da política ótima determinística $V^{*}(s)$, a média vira
-um **máximo** porque todo o peso vai para a melhor ação.
+Esto difiere de la relación para una política genérica estocástica, que
+se expresa mediante un **promedio
+ponderado** ($\sum_{a}^{}\pi(a \mid s)Q^{\pi}\left( s,a \right)$). En el
+caso de la política óptima determinística $V^{*}(s)$, el promedio se
+convierte en un **máximo** porque todo el peso va a la mejor acción.
 
-**Obs:** No caso de empate entre mais de uma ação ao aplicar a equação
-(23) pode-se gerar uma **política estocástica** a sortear de forma
-equiprovável qual ação que o agente deverá tomar.
+**Obs:** En caso de empate entre más de una acción al aplicar la
+ecuación (23) se puede generar una **política estocástica** sorteando de
+forma equiprobable qué acción deberá tomar el agente.
 
-Pode-se deduzir a equação de Bellman para política ótima $\pi^{*}(a/s)$
-(Equação da Otimalidade de Bellman) da função de estado-valor $V^{*}$com
-os seguintes passos:
+Se puede deducir la ecuación de Bellman para la política óptima
+$\pi^{*}(a/s)$ (Ecuación de la Optimalidad de Bellman) de la función de
+estado-valor $V^{*}$ con los siguientes pasos:
 
-**Passo 1:** Partimos da definição de $V^{*}$:
+**Paso 1:** Partimos de la definición de $V^{*}$:
 
 $$V^{*}(s) = \max_{a}Q^{*}\left( s,a \right)
 $$
 
-**Passo 2:** Usamos a definição de $Q^{*}$ (que é a mesma para qualquer
-política pela equação (17)):
+**Paso 2:** Usamos la definición de $Q^{*}$ (que es la misma para
+cualquier política según la ecuación (17)):
 
 $$Q^{*}\left( s,a \right) = \sum_{s'}^{}P\left( s',r\  \mid s,\ a \right)\left\lbrack R\left( s,a,s' \right) + \gamma V^{*}\left( s' \right) \right\rbrack
 $$
 
-**Passo 3:** Substituímos a equação do passo 2 na equação do passo 1 e
-obtemos a Equação de Bellman Ótima para a função de estado-valor
- $\ V^{*}(s)$:
+**Paso 3:** Sustituimos la ecuación del paso 2 en la ecuación del paso 1
+y obtenemos la Ecuación de Bellman Óptima para la función de
+estado-valor $\ V^{*}(s)$:
 
   -------------------------------------------------------------------------------------------------------------------------------------------------------------------
          $$V^{*}(s) = \max_{a}\sum_{s'}^{}P\left( s',r \mid s,a \right)\left\lbrack R\left( s,a,s' \right) + \gamma V^{*}\left( s' \right) \right\rbrack$$   \(24\)
@@ -901,27 +914,27 @@ obtemos a Equação de Bellman Ótima para a função de estado-valor
 
   -------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-Assim temos que:
+Así tenemos que:
 
 $$V^{*}(s)\  = \ V^{\pi*}(s)\  \geq \ V^{\pi}(s)$$
 
-A função estado-ação para um política ótima é maior que outra função
-estado-ação para qualquer outra política em qualquer estado.
+La función estado-acción para una política óptima es mayor que otra
+función estado-acción para cualquier otra política en cualquier estado.
 
-### Equação de Bellman Ótima para a função de valor de estado-ação
+### Ecuación de Bellman Óptima para la función de valor de estado-acción
 
-De forma análoga pode-se deduzir a equação de Bellman para política
-ótima (Equação da Otimalidade de Bellman) da função de ação-valor
-$Q^{*}(s,\ a)\$com os seguintes passos:
+De forma análoga se puede deducir la ecuación de Bellman para la
+política óptima (Ecuación de la Optimalidad de Bellman) de la función de
+acción-valor $Q^{*}(s,\ a)\$ con los siguientes pasos:
 
-**Passo 1:** Partimos da definição de $Q^{*}$:
+**Paso 1:** Partimos de la definición de $Q^{*}$:
 
 $$Q^{*}\left( s,a \right) = \sum_{s'}^{}P\left( s',r \mid s,\ a \right)\left\lbrack R\left( s,a,s' \right) + \gamma V^{*}\left( s' \right) \right\rbrack
 $$
 
-**Passo 2:** Usamos a
-relação $V^{*}\left( s' \right) = \max_{a'}Q^{*}\left( s',a' \right)$ e
-obtemos a função de ação-valor $Q^{*}(s,\ a)$:
+**Paso 2:** Usamos la relación
+$V^{*}\left( s' \right) = \max_{a'}Q^{*}\left( s',a' \right)$ y
+obtenemos la función de acción-valor $Q^{*}(s,\ a)$:
 
   ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
          $$Q^{*}\left( s,a \right) = \sum_{s'}^{}P\left( s',r \mid s,\ a \right)\left\lbrack R\left( s,a,s' \right) + \gamma\max_{a'}Q^{*}\left( s',a' \right) \right\rbrack$$   \(25\)
@@ -929,96 +942,99 @@ obtemos a função de ação-valor $Q^{*}(s,\ a)$:
 
   ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-As equações para $V^{*}(s)$ e $Q^{*}\left( s,a \right)$ são do tipo
-ponto fixo (x = f(x)) e podem ser resolvidas a partir de um valor
-inicial $x_{0}$ de forma recursiva.
+Las ecuaciones para $V^{*}(s)$ y $Q^{*}\left( s,a \right)$ son del tipo
+punto fijo (x = f(x)) y pueden resolverse a partir de un valor inicial
+$x_{0}$ de forma recursiva.
 
-## 3.3 -- Métodos de Solução por Iteração de Valor, Iteração de Política e GPI
+## 3.3 -- Métodos de Solución por Iteración de Valor, Iteración de Política y GPI
 
-Em sequencia são apresentados três métodos de solução para a obtenção da
-Política Ótima $\pi^{*}(a \mid s)$ **: Iteração de Valor, Iteração de
-Política e GPI** (*Generalized Policy Iteration*).
+A continuación se presentan tres métodos de solución para la obtención
+de la Política Óptima $\pi^{*}(a \mid s)$ **: Iteración de Valor,
+Iteración de Política y GPI** (*Generalized Policy Iteration*).
 
-### Método de Iteração de Valor
+### Método de Iteración de Valor
 
-O método de solução de política ótima $\pi^{*}(a \mid s)\$ por
-**iteração de valor** parte de um valor inicial $V_{0}(s)$ para todo
-estado s. A equação (24) para $V^{*}(s)$ é então resolvida de forma
-recursiva até a convergência. Em seguida utiliza-se $V^{*}(s)$ no
-cálculo de $Q^{\pi^{*}}\left( s,a \right)\$pela equação (17) para obter
-a política ótima através da operação
+El método de solución de política óptima $\pi^{*}(a \mid s)\$ por
+**iteración de valor** parte de un valor inicial $V_{0}(s)$ para todo
+estado s. La ecuación (24) para $V^{*}(s)$ se resuelve entonces de forma
+recursiva hasta la convergencia. A continuación se utiliza $V^{*}(s)$ en
+el cálculo de $Q^{\pi^{*}}\left( s,a \right)\$mediante la ecuación (17)
+para obtener la política óptima a través de la operación
 $a = \arg\max_{a}Q^{\pi^{*}}\left( s,a \right)$.
 
-O algoritmo em pseudocódigo da solução por **iteração por valor** é
-apresentado na Figura 5 conforme extraído da referência \[ 1\].
+El algoritmo en pseudocódigo de la solución por **iteración de valor**
+se presenta en la Figura 5, tal como se extrajo de la referencia \[ 1\].
 
-![**Figura 5** -- Algoritmo por Iteração de Valor (extraído da
-referência \[1\])](media/image4.png){width="6.268055555555556in"
+![**5** -- Algoritmo por Iteración de Valor (extraído de la referencia
+\[1\])](media/image4.png){width="6.268055555555556in"
 height="2.9123687664041995in"}
 
-### Método de Iteração de Política
+### Método de Iteración de Política
 
-O método de solução de política ótima $\pi^{*}(a \mid s)$ por **iteração
-de política** parte de uma política arbitrária inicial $\pi(a \mid s)$.
-Avalia-se $V^{\pi}(s)$ recursivamente com a equação (14) para essa
-política até obter a convergência. Observe que não deve-se
-utilizar $\max$ nessa avaliação pois não se está procurando $V_{*}(s)$.
+El método de solución de política óptima $\pi^{*}(a \mid s)$ por
+**iteración de política** parte de una política arbitraria inicial
+$\pi(a \mid s)$. Se evalúa $V^{\pi}(s)$ recursivamente con la ecuación
+(14) para esa política hasta obtener la convergencia. Observe que no
+debe utilizarse $\max$ en esta evaluación, pues no se está buscando
+$V_{*}(s)$.
 
-Em seguida utiliza-se $V^{\pi}(s)$ no cálculo
-de $Q^{\pi}\left( s,a \right)$  pela equação (17) para **melhorar** a
-política através da
-operação $a = \arg\max_{a}Q^{\pi}\left( s,a \right)$, obtendo uma nova
-política $\pi_{novo}$. Se $\pi_{novo} \neq \pi$, repete-se o processo
-com a nova política. Quando $\pi_{novo} = \pi$, então $\pi = \pi^{*}$.
+A continuación se utiliza $V^{\pi}(s)$ en el cálculo de
+$Q^{\pi}\left( s,a \right)$ mediante la ecuación (17) para **mejorar**
+la política a través de la operación
+$a = \arg\max_{a}Q^{\pi}\left( s,a \right)$, obteniendo una nueva
+política $\pi_{nuevo}$. Si $\pi_{nuevo} \neq \pi$, se repite el proceso
+con la nueva política. Cuando $\pi_{nuevo} = \pi$, entonces
+$\pi = \pi^{*}$.
 
-O algoritmo em pseudocódigo da solução por **iteração de política** é
-apresentado na Figura 6 conforme extraído da referência \[ 1\].
+El algoritmo en pseudocódigo de la solución por **iteración de
+política** se presenta en la Figura 6, tal como se extrajo de la
+referencia \[ 1\].
 
-![**Figura 6** -- Algoritmo para Iteração de Política (extraído da
-referência \[1\])](media/image5.png){width="6.268055555555556in"
+![**6** -- Algoritmo para Iteración de Política (extraído de la
+referencia \[1\])](media/image5.png){width="6.268055555555556in"
 height="4.341431539807524in"}
 
-A **avaliação de política determinística**, no passo 2 do algoritmo de
-Iteração de Política, trata da obtenção de *Vπ*(*s*) a partir da equação
-(14), a função de estado para uma dada política
-$\pi^{}(a \mid s)\ determinística$, ou seja:
+La **evaluación de política determinística**, en el paso 2 del algoritmo
+de Iteración de Política, trata de la obtención de *Vπ*(*s*) a partir de
+la ecuación (14), la función de estado para una política dada
+$\pi^{}(a \mid s)\ \ determinística$, es decir:
 
 $$V^{\pi}(s) = \sum_{s'}^{}P\left( s',a\  \mid s,\ \pi(s) \right)\left\lbrack R\left( s,\pi(s),s' \right) + \gamma V^{\pi}\left( s' \right) \right\rbrack
 $$
 
-A **avaliação de política para política estocástica**, no passo 2 do
-algoritmo de Iteração de Política, trata da avaliação de *Vπ*(*s*), a
-função de estado-ação para uma dada política
-$\pi^{}(a \mid s)\ estocástica$, que pode ser apresentada na forma
-escalar ou vetorial, como a seguir:
+La **evaluación de política para política estocástica**, en el paso 2
+del algoritmo de Iteración de Política, trata de la evaluación de
+*Vπ*(*s*), la función de estado-acción para una política dada
+$\pi^{}(a \mid s)\ \ estocástica$, que puede presentarse en la forma
+escalar o vectorial, como se muestra a continuación:
 
 $$V^{\pi}(s) = \sum_{a}^{}\pi(a \mid s)\sum_{s'}^{}P\left( s',a\  \mid s,\ a \right)\left\lbrack R\left( s,a,s' \right) + \gamma V^{\pi}\left( s' \right) \right\rbrack
 $$
 
-**Obs:** Utilizada na avaliação de políticas estocásticas
-(ex: $\epsilon$-greedy).
+**Obs:** Utilizada en la evaluación de políticas estocásticas (ej.:
+$\epsilon$-greedy).
 
 ### Generalized Policy Iteration
 
-O ***Generalized Policy Iteration* (GPI)** é um conceito que se baseia
-na generalização do processo de iteração por política que
-busca **economizar tempo computacional** ao não exigir a convergência
-completa da avaliação da função valor $V(s)$ antes de realizar a
-melhoria da política. Em vez de resolver exatamente o sistema de
-equações de Bellman para $V^{\pi}$ até a convergência (como no Policy
-Iteration clássico), o GPI intercala  passos de avaliação incompleta de
-$V(s)$ e melhoria da política, permitindo que $V(s)$ seja atualizada
-apenas algumas vezes (ou até uma única vez) antes de se melhorar a
-política em cada passo. 
+El ***Generalized Policy Iteration* (GPI)** es un concepto basado en la
+generalización del proceso de iteración por política que busca **ahorrar
+tiempo computacional** al no exigir la convergencia completa de la
+evaluación de la función de valor $V(s)$ antes de realizar la mejora de
+la política. En lugar de resolver exactamente el sistema de ecuaciones
+de Bellman para $V^{\pi}$ hasta la
+convergencia$\ (como\ en\ el\ Policy\ Iteration\ clásico),\ el\ GPI\ intercala\ \ pasos\ de\ evaluación\ incompleta\ de\ (s)$
+y mejora de la política, permitiendo que $V(s)$ se actualice solo
+algunas veces (o incluso una única vez) antes de mejorar la política en
+cada paso.
 
 ### Modified Policy Iteration
 
-O **MPI (Modified Policy Iteration)** proposto por Puterman & Shin
-(1978) é um algoritmo GPI que, em cada iteração, aplica **k vezes o
-operador de Bellman da política atual** para realizar uma avaliação
-aproximada do valor, e em seguida realiza a melhoria da política. Ele
-unifica **Value Iteration** (k=1) e **Policy Iteration** (k=∞) como dois
-casos extremos.
+El **MPI (Modified Policy Iteration)** propuesto por Puterman & Shin
+(1978) es un algoritmo GPI que, en cada iteración, aplica **k veces el
+operador de Bellman de la política actual** para realizar una evaluación
+aproximada del valor, y luego realiza la mejora de la política. Unifica
+**Value Iteration** (k=1) y **Policy Iteration** (k=∞) como dos casos
+extremos.
 
 +-----------------------------------------------------------------------+
 | Modified Policy Iteration (GPI)                                       |
@@ -1068,710 +1084,736 @@ casos extremos.
 | until policy-stable                                                   |
 +=======================================================================+
 
-: **Figura 7** -- Pseudocódigo para Generalized Policy Iteration
+: **7** -- Pseudocódigo para Generalized Policy Iteration
 
-## 3.4 -- Comparação entre os Métodos de Solução
+## 3.4 -- Comparación entre los Métodos de Solución
 
-A tabela a seguir apresenta uma comparação da ordem de complexidade do
-custo computacional dos algoritmos estudados para solução do MDP:
+La siguiente tabla presenta una comparación del orden de complejidad del
+costo computacional de los algoritmos estudiados para la solución del
+MDP:
 
-  -----------------------------------------------------------------------------
-     **Método**       **Custo por     **Nº de iterações         **Custo
-                       iteração**           (k)**        Total (assintótico)**
-  ---------------- ------------------ ----------------- -----------------------
-     ***Policy      O(\|A\|\|S\|² +      Muito baixo       Domina para \|S\|
-     Iteration*         \|S\|³)         (tipicamente      grande --- o termo
-       (PI)**                               quase        \|S\|³ vira o gargalo
-                                       independente de  
-                                           \|S\|)       
+  ------------------------------------------------------------------------
+     **Método**       **Costo por          **Nº de        **Costo Total
+                      iteración**     iteraciones (k)**   (asintótico)**
+  ---------------- ------------------ ----------------- ------------------
+     ***Policy      O(\|A\|\|S\|² +       Muy bajo      Domina para \|S\|
+     Iteration*         \|S\|³)       (típicamente casi   grande --- el
+       (PI)**                         independiente de  término \|S\|³ se
+                                           \|S\|)        vuelve el cuello
+                                                            de botella
 
-      ***Value       O(\|A\|\|S\|²)   Alto, cresce com   Sem termo cúbico, mas
-     Iteration*                            1/(1-γ)      nº de iterações explode
-       (VI)**                                                 quando γ→1
+      ***Value       O(\|A\|\|S\|²)    Alto, crece con     Sin término
+     Iteration*                            1/(1-γ)      cúbico, pero el nº
+       (VI)**                                           de iteraciones se
+                                                        dispara cuando γ→1
 
-    ***Modified     O(k·\|A\|\|S\|²)  Decresce conforme    Sem termo cúbico e
-       Policy                            k aumenta,      poucas iterações ---
-     Iteration*                       aproximando-se do  melhor trade-off para
-       MPI)**                               de PI            \|S\| grande
-  -----------------------------------------------------------------------------
+    ***Modified     O(k·\|A\|\|S\|²)  Decrece conforme  Sin término cúbico
+       Policy                            k aumenta,          y pocas
+     Iteration*                       acercándose al de  iteraciones ---
+       MPI)**                                PI          mejor trade-off
+                                                        para \|S\| grande
+  ------------------------------------------------------------------------
 
-  : **Tabela 1** -- Comparação do Custo Computacional dos Algoritmos MDP
+  : **1** -- Comparación del Costo Computacional de los Algoritmos MDP
 
-O valor k é considerado um hiperparâmetro a ser ajustado para o
-algoritmo de MPI, e pode fazer o MPI se aproximar mais de VI ou de PI
-conforme o seu valor:
+El valor k se considera un hiperparámetro a ajustar para el algoritmo de
+MPI, y puede hacer que el MPI se aproxime más a VI o a PI según su
+valor:
 
-- k pequeno demais: se aproxima de VI, herdando o problema de muitas
-  iterações externas quando γ é próximo de 1; e
+- k demasiado pequeño: se aproxima a VI, heredando el problema de muchas
+  iteraciones externas cuando γ está próximo a 1; y
 
-- k grande demais: embora não possua o termo cúbico, o custo por
-  iteração k·\|A\|\|S\|² pode acabar comparável ao de PI se k crescer
-  demais, e você perde a vantagem.
+- k demasiado grande: aunque no posee el término cúbico, el costo por
+  iteración k·\|A\|\|S\|² puede terminar siendo comparable al de PI si k
+  crece demasiado, y se pierde la ventaja.
 
-MPI possui desempenho computacional melhor que PI e VI para MDPs com
-muitos estados, desde que k seja ajustado ao problema --- ele é o único
-dos três algoritmos que evita simultaneamente o termo cúbico de PI e a
-explosão de iterações de VI quando γ é alto.
+MPI tiene un desempeño computacional mejor que PI y VI para MDPs con
+muchos estados, siempre que k se ajuste al problema --- es el único de
+los tres algoritmos que evita simultáneamente el término cúbico de PI y
+la explosión de iteraciones de VI cuando γ es alto.
 
-As soluções por inversão de matrizes foram apresentadas apenas como base
-teórica e não foram utilizadas nas simulações em Python deste artigo. O
-motivo principal é do ponto de vista numérico, a
-matriz $I - \gamma P^{\pi}$ torna-se progressivamente mal-condicionada à
-medida que $\gamma \rightarrow 1$, de modo que sua inversão amplifica
-erros de arredondamento --- problema que a iteração de ponto fixo não
-apresenta, pois seu erro decai geometricamente com fator $\gamma$,
-independentemente do condicionamento.
+Las soluciones por inversión de matrices se presentaron únicamente como
+base teórica y no se utilizaron en las simulaciones en Python de este
+artículo. El motivo principal es que, desde el punto de vista numérico,
+la matriz $I - \gamma P^{\pi}$ se vuelve progresivamente mal
+condicionada a medida que $\gamma \rightarrow 1$, de modo que su
+inversión amplifica errores de redondeo --- problema que la iteración de
+punto fijo no presenta, pues su error decae geométricamente con factor
+$\gamma$, independientemente del condicionamiento.
 
-Todos os algoritmos que vimos nesta seção dependem da avaliação da
-função valor $V(s)$ em todos os estados em cada passo e por isso são
-classificados com **algoritmos síncronos**. Os mesmos algoritmos podem
-ser implementados na versão assíncrona permitindo propagar a avaliação
-de V(s) em cada estado individualmente. Porém os **algoritmos
-assíncronos** não são apropriados para vetorização e uso de GPUs.
+Todos los algoritmos que vimos en esta sección dependen de la evaluación
+de la función de valor $V(s)$ en todos los estados en cada paso y por
+eso se clasifican como **algoritmos síncronos**. Los mismos algoritmos
+pueden implementarse en la versión asíncrona, permitiendo propagar la
+evaluación de V(s) en cada estado individualmente. Sin embargo, los
+**algoritmos asíncronos** no son apropiados para la vectorización y el
+uso de GPUs.
 
-# Métricas para Avaliação de Soluções
+# Métricas para la Evaluación de Soluciones
 
-As seguintes métricas são podem ser utilizadas para avaliação das
-soluções: número de passos para convergência e tempo de execução. Neste
-estudo optou-se por usar o tempo de execução.
+Las siguientes métricas pueden utilizarse para la evaluación de las
+soluciones: número de pasos hasta la convergencia y tiempo de ejecución.
+En este estudio se optó por utilizar el tiempo de ejecución.
 
-# Exemplos de aplicação de MDP e Resultados:
+# Ejemplos de aplicación de MDP y Resultados:
 
-Esta seção aborda exemplos de: avaliação de função de estado a partir de
-uma política conhecida para o exemplo 3.5 do livro \[1\] \[Sutton &
-Barto\], obtenção da política ótima para jogo de tabuleiro do robô
-logístico apresentado na Figura 3, obtenção da política ótima para jogo
-de tabuleiro do exemplo 3.8 do livro \[1\] \[Sutton & Barto\], obtenção
-da política ótima para o jogo **FrozenLake** disponível no pacote
-Gymnasium, obtenção de política ótima para o jogo de tabuleiro do Wumpus
-do livro \[7\]. Os códigos em Python utilizados no exemplos estão
-disponibilizados em \[11\].
+Esta sección aborda ejemplos de: evaluación de la función de estado a
+partir de una política conocida para el ejemplo 3.5 del libro \[1\]
+\[Sutton & Barto\], obtención de la política óptima para el juego de
+tablero del robot logístico presentado en la Figura 3, obtención de la
+política óptima para el juego de tablero del ejemplo 3.8 del libro \[1\]
+\[Sutton & Barto\], obtención de la política óptima para el juego
+**FrozenLake** disponible en el paquete Gymnasium, obtención de la
+política óptima para el juego de tablero del Wumpus del libro \[7\]. Los
+códigos en Python utilizados en los ejemplos están disponibles en
+\[11\].
 
-As seguintes convenções foram utilizadas na implementação em Python dos
-exemplos de jogos de tabuleiro:
+Las siguientes convenciones se utilizaron en la implementación en Python
+de los ejemplos de juegos de tablero:
 
-- $S_{0},S_{1},S_{2},\ldots$ índices dos estados crescem de cima pra
-  baixo e da esquerda para direita do tabuleiro; e
+- $S_{0},S_{1},S_{2},\ldots$ Los índices de los estados crecen de arriba
+  hacia abajo y de izquierda a derecha del tablero; y
 
-- Posição (x, y) de origem no tabuleiro corresponde ao canto inferior
-  esquerdo do tabuleiro -- posição (0,0).
+- La posición (x, y) de origen en el tablero corresponde a la esquina
+  inferior izquierda del tablero -- posición (0,0).
 
-Os notebooks da implementação em Python dos exemplos apresentados a
-seguir encontram-se em \[11\].
+Los notebooks de la implementación en Python de los ejemplos presentados
+a continuación se encuentran en \[11\].
 
-## 5.1 -- Avaliação de função de estado $\mathbf{V}^{\mathbf{\pi}}\left( \mathbf{s} \right)\mathbf{\ }$a partir de uma política conhecida$\mathbf{\pi}^{}\left( \mathbf{a \mid s} \right)$
+## 5.1 -- Evaluación de la función de estado $\mathbf{V}^{\mathbf{\pi}}\left( \mathbf{s} \right)\mathbf{\ }$ a partir de una política conocida$\mathbf{\pi}^{}\left( \mathbf{a \mid s} \right)$
 
-O Exemplo 3.5 do livro \[1\] \[Sutton & Barto\] trata de um tabuleiro 5
-x 5 com as seguintes regras para construção da Dinâmica do MDP:
+El Ejemplo 3.5 del libro \[1\] \[Sutton & Barto\] trata de un tablero de
+5 x 5 con las siguientes reglas para la construcción de la Dinámica del
+MDP:
 
-- Cada posição no tabuleiro está associada a um estado;
+- Cada posición del tablero está asociada a un estado;
 
-- Ações de movimentação em cada estado/posição: pra cima, direita, pra
-  baixo e esquerda;
+- Acciones de movimiento en cada estado/posición: hacia arriba, derecha,
+  hacia abajo e izquierda;
 
-- Recompensa de +10 por qualquer ação no estado $S_{1}$ fazendo a
-  transição para o estado $S_{21}$;
+- Recompensa de +10 por cualquier acción en el estado $S_{1}$ haciendo
+  la transición al estado $S_{21}$;
 
-- Recompensa de +5 por qualquer ação no estado $S_{3}$ fazendo a
-  transição para o estado $S_{13}$;
+- Recompensa de +5 por cualquier acción en el estado $S_{3}$ haciendo la
+  transición al estado $S_{13}$;
 
-- Todos os outros movimentos nos demais estados têm recompensa zero;
+- Todos los demás movimientos en los demás estados tienen recompensa
+  cero;
 
-- Considere dada uma política equiprovável em cada um dos estados, isto
-  é, a probabilidade de tomar qualquer das ações em um estado é igual a
-  ¼.
+- Considérese dada una política equiprobable en cada uno de los estados,
+  es decir, la probabilidad de tomar cualquiera de las acciones en un
+  estado es igual a ¼.
 
-A Figura 8 apresenta a equação e o fluxo de dados para a avaliação de
-política. O criador de política (*Policy Builder*) gera uma matriz 5 x 4
-com todas as linhas iguais a ¼. O gerador de Dinâmica do Tabuleiro
-(*GridDynBuilder*) produz um dicionário de dinâmica na estrutura da
-Figura 4 a partir das regras definidas para o tabuleiro. Utilizando a
-matriz de política e o dicionário da dinâmica o Avaliador de Política
-calcula $V^{\pi}(s)$ recursivamente com a equação (14) partindo do valor
-igual a zero e a constante gamma igual a 0,9. O Visualizador de
-Resultados plota o desenho do Tabuleiro indicando a política com setas e
-o valor da função de estado em cada posição.
+La Figura 8 presenta la ecuación y el flujo de datos para la evaluación
+de política. El creador de política (*Policy Builder*) genera una matriz
+de 5 x 4 con todas las filas iguales a ¼. El generador de Dinámica del
+Tablero (*GridDynBuilder*) produce un diccionario de dinámica con la
+estructura de la Figura 4 a partir de las reglas definidas para el
+tablero. Utilizando la matriz de política y el diccionario de la
+dinámica, el Evaluador de Política calcula $V^{\pi}(s)$ recursivamente
+con la ecuación (14) partiendo del valor igual a cero y la constante
+gamma igual a 0,9. El Visualizador de Resultados grafica el dibujo del
+Tablero indicando la política con flechas y el valor de la función de
+estado en cada posición.
 
-> A Figura 9 mostra a arquitetura do projeto de classes em Python para
-> Avaliação de Política.
+> La Figura 9 muestra la arquitectura del diseño de clases en Python
+> para la Evaluación de Política.
 
-![**Figura 8** -- Equação e fluxo de dados para Avaliação de
+![**8** -- Ecuación y flujo de datos para la Evaluación de
 Política](media/image6.jpg){width="6.268055555555556in"
 height="3.5256944444444445in"}
 
-![**Figura 9** -- Arquitetura para Avaliação de
+![**9** -- Arquitectura para la Evaluación de
 Política](media/image7.jpg){width="5.690972222222222in"
 height="3.2006944444444443in"}
 
-A Tabela 2 descreve os padrões de projetos utilizados na arquitetura de
-classes para avaliação de política.
+La Tabla 2 describe los patrones de diseño utilizados en la arquitectura
+de clases para la evaluación de política.
 
 +-----------------------------------+-------------------+---------------------+
-| **Classe**                        | **Padrão de       | **Função**          |
-|                                   | Projeto**         |                     |
+| **Clase**                         | **Patrón de       | **Función**         |
+|                                   | Diseño**          |                     |
 +===================================+===================+=====================+
-| PolicyBuilder (e suas subclasses  | Factory Method    | ** **Define uma     |
-| RandomDeterministicPolicyBuilder, |                   | interface para      |
-| EquiProbablePolicyBuilder)        | (Pg. 107 de       | criar um objeto     |
-|                                   | \[8\])            | (build), mas deixa  |
-|                                   |                   | as subclasses       |
-|                                   |                   | decidirem qual      |
-|                                   |                   | classe instanciar.  |
-|                                   |                   | Isso permite que a  |
-|                                   |                   | criação da política |
-|                                   |                   | (pi_prob) varie     |
-|                                   |                   | independentemente   |
-|                                   |                   | do cliente que a    |
-|                                   |                   | utiliza. A classe   |
-|                                   |                   | ABC no topo sugere  |
-|                                   |                   | uma hierarquia de   |
-|                                   |                   | criação.            |
+| PolicyBuilder (e suas subclasses  | Factory Method    | ** **Define una     |
+| RandomDeterministicPolicyBuilder, |                   | interfaz para crear |
+| EquiProbablePolicyBuilder)        | (Pág. 107 de      | un objeto (build),  |
+|                                   | \[8\])            | pero deja que las   |
+|                                   |                   | subclases decidan   |
+|                                   |                   | qué clase           |
+|                                   |                   | instanciar. Esto    |
+|                                   |                   | permite que la      |
+|                                   |                   | creación de la      |
+|                                   |                   | política (pi_prob)  |
+|                                   |                   | varíe               |
+|                                   |                   | independientemente  |
+|                                   |                   | del cliente que la  |
+|                                   |                   | utiliza. La clase   |
+|                                   |                   | ABC en la parte     |
+|                                   |                   | superior sugiere    |
+|                                   |                   | una jerarquía de    |
+|                                   |                   | creación.           |
 +-----------------------------------+-------------------+---------------------+
-|                                   | Template Method   | Define o esqueleto  |
-|                                   |                   | de um algoritmo na  |
-|                                   | (Pg. 325 de       | superclasse         |
-|                                   | \[8\])            | (build), mas        |
-|                                   |                   | permite que as      |
-|                                   |                   | subclasses          |
-|                                   |                   | (Random\... e       |
+|                                   | Template Method   | Define el esqueleto |
+|                                   |                   | de un algoritmo en  |
+|                                   | (Pág. 325 de      | la superclase       |
+|                                   | \[8\])            | (build), pero       |
+|                                   |                   | permite que las     |
+|                                   |                   | subclases           |
+|                                   |                   | (Random\... y       |
 |                                   |                   | EquiProbable\...)   |
-|                                   |                   | redefinam certos    |
-|                                   |                   | passos específicos  |
-|                                   |                   | do algoritmo sem    |
-|                                   |                   | alterar sua         |
-|                                   |                   | estrutura geral.    |
+|                                   |                   | redefinan ciertos   |
+|                                   |                   | pasos específicos   |
+|                                   |                   | del algoritmo sin   |
+|                                   |                   | alterar su          |
+|                                   |                   | estructura general. |
 +-----------------------------------+-------------------+---------------------+
-| BasePolicyEvaluator (e suas       | Strategy          | Define uma família  |
+| BasePolicyEvaluator (e suas       | Strategy          | Define una familia  |
 | subclasses                        |                   | de algoritmos       |
-| IterativePolicyEvaluator,         | (Pg. 315 de       | (avaliação          |
+| IterativePolicyEvaluator,         | (Pág. 315 de      | (evaluación         |
 | VectorizedPolicyEvaluator)        | \[8\])            | iterativa vs.       |
-|                                   |                   | vetorizada),        |
-|                                   |                   | encapsula cada um   |
-|                                   |                   | deles e os torna    |
-|                                   |                   | intercambiáveis. O  |
+|                                   |                   | vectorizada),       |
+|                                   |                   | encapsula cada uno  |
+|                                   |                   | de ellos y los      |
+|                                   |                   | vuelve              |
+|                                   |                   | intercambiables. El |
 |                                   |                   | BasePolicyEvaluator |
-|                                   |                   | define a interface  |
-|                                   |                   | comum (evaluate),   |
-|                                   |                   | permitindo que o    |
+|                                   |                   | define la interfaz  |
+|                                   |                   | común (evaluate),   |
+|                                   |                   | permitiendo que el  |
 |                                   |                   | algoritmo de        |
-|                                   |                   | avaliação varie     |
-|                                   |                   | independentemente   |
-|                                   |                   | do contexto que o   |
+|                                   |                   | evaluación varíe    |
+|                                   |                   | independientemente  |
+|                                   |                   | del contexto que lo |
 |                                   |                   | usa.                |
 +-----------------------------------+-------------------+---------------------+
-| GridDynamicBuilder                | Builder           | Separa a construção |
-|                                   |                   | de um objeto        |
-|                                   | (Pg. 97 de \[8\]) | complexo (P_Din) da |
-|                                   |                   | sua representação,  |
-|                                   |                   | permitindo que o    |
-|                                   |                   | mesmo processo de   |
-|                                   |                   | construção crie     |
+| GridDynamicBuilder                | Builder           | Separa la           |
+|                                   |                   | construcción de un  |
+|                                   | (Pág. 97 de       | objeto complejo     |
+|                                   | \[8\])            | (P_Din) de su       |
+|                                   |                   | representación,     |
+|                                   |                   | permitiendo que el  |
+|                                   |                   | mismo proceso de    |
+|                                   |                   | construcción cree   |
 |                                   |                   | diferentes          |
-|                                   |                   | representações. A   |
-|                                   |                   | classe fornece      |
-|                                   |                   | métodos             |
-|                                   |                   | passo-a-passo       |
+|                                   |                   | representaciones.   |
+|                                   |                   | La clase            |
+|                                   |                   | proporciona métodos |
+|                                   |                   | paso a paso         |
 |                                   |                   | (adicionar_salto,   |
 |                                   |                   | adicionar_terminal, |
 |                                   |                   | etc.) para          |
-|                                   |                   | construir o         |
-|                                   |                   | ambiente de grid    |
-|                                   |                   | complexo antes de   |
-|                                   |                   | retornar o objeto   |
+|                                   |                   | construir el        |
+|                                   |                   | entorno de grid     |
+|                                   |                   | complejo antes de   |
+|                                   |                   | devolver el objeto  |
 |                                   |                   | final.              |
 +-----------------------------------+-------------------+---------------------+
-| VisualizadorResultado             | Façade            | Fornece uma         |
-|                                   |                   | interface unificada |
-|                                   | (Pg. 185 de       | para um conjunto de |
-|                                   | \[8\])            | interfaces em um    |
-|                                   |                   | subsistema. O       |
-|                                   |                   | visualizador        |
-|                                   |                   | esconde a           |
-|                                   |                   | complexidade de     |
-|                                   |                   | interagir com       |
+| VisualizadorResultado             | Façade            | Proporciona una     |
+|                                   |                   | interfaz unificada  |
+|                                   | (Pág. 185 de      | para un conjunto de |
+|                                   | \[8\])            | interfaces en un    |
+|                                   |                   | subsistema. El      |
+|                                   |                   | visualizador oculta |
+|                                   |                   | la complejidad de   |
+|                                   |                   | interactuar con     |
 |                                   |                   | bibliotecas de      |
-|                                   |                   | plotagem            |
-|                                   |                   | (provavelmente      |
-|                                   |                   | Matplotlib) e       |
-|                                   |                   | estruturas de dados |
-|                                   |                   | internas,           |
-|                                   |                   | oferecendo métodos  |
+|                                   |                   | graficación         |
+|                                   |                   | (probablemente      |
+|                                   |                   | Matplotlib) y       |
+|                                   |                   | estructuras de      |
+|                                   |                   | datos internas,     |
+|                                   |                   | ofreciendo métodos  |
 |                                   |                   | simples como        |
-|                                   |                   | desenhar e comparar |
-|                                   |                   | para o cliente.     |
+|                                   |                   | desenhar y comparar |
+|                                   |                   | para el cliente.    |
 +-----------------------------------+-------------------+---------------------+
 
-: **Tabela 2** -- Padrões de Projeto para Avaliação de Política
+: **2** -- Patrones de Diseño para la Evaluación de Política
 
-A Figura 10 apresenta o resultado para o tabuleiro do Exemplo 3.5 do
-\[Sutton & Barto\] \[1\] validando a implementação por coincidir com o
-resultado mostrado neste livro. O gerador de Dinâmica do Tabuleiro
-(*GridDynBuilder*) gera um dicionário de dinâmica na estrutura da Figura
-4 a partir das regras definidas para o tabuleiro.
+La Figura 10 presenta el resultado para el tablero del Ejemplo 3.5 de
+\[Sutton & Barto\] \[1\], validando la implementación por coincidir con
+el resultado mostrado en dicho libro. El generador de Dinámica del
+Tablero (*GridDynBuilder*) genera un diccionario de dinámica con la
+estructura de la Figura 4 a partir de las reglas definidas para el
+tablero.
 
-![**Figura 10** -- Avaliação de Política do Exemplo 3.5 de
-\[Sutton&Barto\] \[1\]](media/image8.png){width="4.376388888888889in"
+![**10** -- Evaluación de Política del Ejemplo 3.5 de \[Sutton&Barto\]
+\[1\]](media/image8.png){width="4.376388888888889in"
 height="4.097222222222222in"}
 
-**Obs:** Opção A - Estado $S_{0}\$no canto superior esquerdo (posição
-(0, 4) em (x , y)).
+**Obs:** Opción A - Estado $S_{0}\$ en la esquina superior izquierda
+(posición (0, 4) en (x , y)).
 
-## 5.2 -- Obtenção da Política Ótima $\mathbf{\pi}^{\mathbf{*}}\left( \mathbf{a \mid s} \right)\mathbf{\ }$conhecida a Dinâmica de jogos de Tabuleiro
+## 5.2 -- Obtención de la Política Óptima $\mathbf{\pi}^{\mathbf{*}}\left( \mathbf{a \mid s} \right)\mathbf{\ }$ conocida la Dinámica de juegos de Tablero
 
-A Figura 11 apresenta as equações e o Fluxo de Dados empregados nos
-algoritmos de VI, PI e MPI para obtenção da Política Ótima para jogos de
-Tabuleiro a partir da sua dinâmica. O gerador de Dinâmica do Tabuleiro
-(*GridDynBuilder*) produz um dicionário de dinâmica na estrutura da
-Figura 4 a partir das regras definidas para o tabuleiro. A classe
-Tabuleiro gera um ambiente com interface padrão do pacote *Gymnasium* do
-Python. O Tabuleiro é processado pelo algoritmo de planejamento a
-escolher -- PI, VI ou MPI -- para obtenção da Política Ótima
-$\pi^{*}(a \mid s)$. O Visualizador de Resultados plota o desenho do
-Tabuleiro indicando a política com setas e o valor da função de estado
-em cada posição.
+La Figura 11 presenta las ecuaciones y el Flujo de Datos empleados en
+los algoritmos de VI, PI y MPI para la obtención de la Política Óptima
+en juegos de Tablero a partir de su dinámica. El generador de Dinámica
+del Tablero (*GridDynBuilder*) produce un diccionario de dinámica con la
+estructura de la Figura 4 a partir de las reglas definidas para el
+tablero. La clase Tabuleiro genera un entorno con la interfaz estándar
+del paquete *Gymnasium* de Python. El Tablero es procesado por el
+algoritmo de planificación a elegir -- PI, VI o MPI -- para la obtención
+de la Política Óptima $\pi^{*}(a \mid s)$. El Visualizador de Resultados
+grafica el dibujo del Tablero indicando la política con flechas y el
+valor de la función de estado en cada posición.
 
-![**Figura 11** -- Equações e Fluxo de Dados para Obtenção da Política
-Ótima
+![**11** -- Ecuaciones y Flujo de Datos para la Obtención de la Política
+Óptima
 $\mathbf{\pi}^{\mathbf{*}}\left( \mathbf{a \mid s} \right)$](media/image9.jpeg){width="5.0256944444444445in"
 height="2.8270833333333334in"}
 
-***Nota:* Obs:** A formulação matemática apresentada para o ciclo I de
-PI utiliza a notação geral para políticas estocásticas
-($\mathbf{\pi}\left( \mathbf{a} \mid \mathbf{s} \right)$). A
-implementação computacional (Ciclo I) otimiza esta etapa utilizando uma
-amostra determinística da política, uma vez que o resultado de
-$\mathbf{V}^{\mathbf{\pi}}\left( \mathbf{s} \right)$é matematicamente
-equivalente para qualquer distribuição de probabilidade entre ações de
-mesmo valor $\mathbf{Q}\left( \mathbf{s},\mathbf{a} \right)$ótimo.
+***Nota:* Obs:** La formulación matemática presentada para el ciclo I de
+PI utiliza la notación general para políticas estocásticas
+($\mathbf{\pi}\left( \mathbf{a} \mid \mathbf{s} \right)$). La
+implementación computacional (Ciclo I) optimiza esta etapa utilizando
+una muestra determinística de la política, dado que el resultado de
+$\mathbf{V}^{\mathbf{\pi}}\left( \mathbf{s} \right)$ es matemáticamente
+equivalente para cualquier distribución de probabilidad entre acciones
+de mismo valor $\mathbf{Q}\left( \mathbf{s},\mathbf{a} \right)$óptimo.
 
-A Figura 12 mostra a arquitetura do projeto de classes em Python para
-Obtenção da Política Ótima
-$\mathbf{\pi}\left( \mathbf{a} \mid \mathbf{s} \right)\$para um jogo de
-Tabuleiro de regras conhecidas.
+La Figura 12 muestra la arquitectura del diseño de clases en Python para
+la Obtención de la Política Óptima
+$\mathbf{\pi}\left( \mathbf{a} \mid \mathbf{s} \right)\$ para un juego
+de Tablero de reglas conocidas.
 
-![**Figura 12** -- Arquitetura para Obtenção de Política
-Ótima](media/image10.jpeg){width="5.196527777777778in"
+![**12** -- Arquitectura para la Obtención de la Política
+Óptima](media/image10.jpeg){width="5.196527777777778in"
 height="2.9229166666666666in"}
 
-A Tabela 3 descreve os padrões de projetos utilizados na arquitetura de
-classes para obtenção da política ótima.
+La Tabla 3 describe los patrones de diseño utilizados en la arquitectura
+de clases para la obtención de la política óptima.
 
 +----------------------------+------------------+--------------------------+
-| **Classe**                 | **Padrão de      | **Função**               |
-|                            | Projeto**        |                          |
+| **Clase**                  | **Patrón de      | **Función**              |
+|                            | Diseño**         |                          |
 +============================+==================+==========================+
-| AvaliadorMDP               | Strategy         | Interface comum para os  |
-|                            |                  | algoritmos de avaliação  |
-|                            | (Pg. 315 de      | (concreto e vetorial).   |
-|                            | \[8\])           | Permite que o            |
+| AvaliadorMDP               | Strategy         | Interfaz común para los  |
+|                            |                  | algoritmos de evaluación |
+|                            | (Pág. 315 de     | (concreto y vectorial).  |
+|                            | \[8\])           | Permite que el           |
 |                            |                  | AlgoritmoDePlanejamento  |
 |                            |                  | trate diferentes métodos |
-|                            |                  | de avaliação de forma    |
-|                            |                  | intercambiável.          |
+|                            |                  | de evaluación de forma   |
+|                            |                  | intercambiable.          |
 +----------------------------+------------------+--------------------------+
-| AvaliadorVetorial          | Strategy         | Implementação concreta   |
-|                            | (Concrete        | da avaliação de          |
+| AvaliadorVetorial          | Strategy         | Implementación concreta  |
+|                            | (Concrete        | de la evaluación de      |
 |                            | Strategy)        | políticas utilizando     |
 |                            |                  | álgebra                  |
-|                            | (Pg. 315 de      | vetorial/matricial. É    |
-|                            | \[8\])           | uma das estratégias que  |
-|                            |                  | podem ser usadas pelo    |
-|                            |                  | planejador.              |
+|                            | (Pág. 315 de     | vectorial/matricial. Es  |
+|                            | \[8\])           | una de las estrategias   |
+|                            |                  | que puede usar el        |
+|                            |                  | planificador.            |
 +----------------------------+------------------+--------------------------+
-| AvaliadorIterativo         | Strategy         | Implementação concreta   |
-|                            | (Concrete        | da avaliação de          |
+| AvaliadorIterativo         | Strategy         | Implementación concreta  |
+|                            | (Concrete        | de la evaluación de      |
 |                            | Strategy)        | políticas de forma       |
-|                            |                  | iterativa. É outra       |
-|                            | (Pg. 315 de      | estratégia               |
-|                            | \[8\])           | intercambiável para o    |
+|                            |                  | iterativa. Es otra       |
+|                            | (Pág. 315 de     | estrategia               |
+|                            | \[8\])           | intercambiable para el   |
 |                            |                  | AlgoritmoDePlanejamento. |
 +----------------------------+------------------+--------------------------+
-| AlgoritmoDePlanejamento    | Strategy         | Classe abstrata que      |
-|                            | (Context)        | define o contrato para   |
-|                            |                  | os algoritmos de         |
-|                            | (Pg. 315 de      | planejamento. Atua como  |
-|                            | \[8\])           | o **Contexto** no padrão |
-|                            |                  | Strategy, utilizando a   |
-|                            |                  | interface AvaliadorMDP.  |
+| AlgoritmoDePlanejamento    | Strategy         | Clase abstracta que      |
+|                            | (Context)        | define el contrato para  |
+|                            |                  | los algoritmos de        |
+|                            | (Pág. 315 de     | planificación. Actúa     |
+|                            | \[8\])           | como el **Contexto** en  |
+|                            |                  | el patrón Strategy,      |
+|                            |                  | utilizando la interfaz   |
+|                            |                  | AvaliadorMDP.            |
 +----------------------------+------------------+--------------------------+
-| IteracaoValor              | Strategy         | Implementa o algoritmo   |
-|                            | (Concrete        | de Iteração de Valor. É  |
-|                            | Strategy)        | uma estratégia concreta  |
-|                            |                  | de planejamento que      |
-|                            | (Pg. 315 de      | herda de                 |
-|                            | \[8\])           | AlgoritmoDePlanejamento. |
+| IteracaoValor              | Strategy         | Implementa el algoritmo  |
+|                            | (Concrete        | de Iteración de Valor.   |
+|                            | Strategy)        | Es una estrategia        |
+|                            |                  | concreta de              |
+|                            | (Pág. 315 de     | planificación que hereda |
+|                            | \[8\])           | de                       |
+|                            |                  | AlgoritmoDePlanejamento. |
 +----------------------------+------------------+--------------------------+
-| BaseIteracaoPolitica       | Template Method  | Classe abstrata que      |
-|                            |                  | define o esqueleto do    |
-|                            | (Pg. 325 de      | algoritmo de iteração de |
-|                            | \[8\])           | política.                |
+| BaseIteracaoPolitica       | Template Method  | Clase abstracta que      |
+|                            |                  | define el esqueleto del  |
+|                            | (Pág. 325 de     | algoritmo de iteración   |
+|                            | \[8\])           | de política.             |
 +----------------------------+------------------+--------------------------+
-| IteracaoPolitica           | Template Method  | Implementação concreta   |
-|                            | (Concrete Class) | do algoritmo de iteração |
-|                            |                  | de política, herdando de |
-|                            | (Pg. 325 de      | BaseIteracaoPolitica.    |
+| IteracaoPolitica           | Template Method  | Implementación concreta  |
+|                            | (Concrete Class) | del algoritmo de         |
+|                            |                  | iteración de política,   |
+|                            | (Pág. 325 de     | heredando de             |
+|                            | \[8\])           | BaseIteracaoPolitica.    |
++----------------------------+------------------+--------------------------+
+| IteracaoPoliticaModificada | Template Method  | Variante del algoritmo   |
+|                            | (Concrete Class) | de iteración de          |
+|                            |                  | política, heredando de   |
+|                            | (Pág. 325 de     | BaseIteracaoPolitica.    |
 |                            | \[8\])           |                          |
 +----------------------------+------------------+--------------------------+
-| IteracaoPoliticaModificada | Template Method  | Variante do algoritmo de |
-|                            | (Concrete Class) | iteração de política,    |
-|                            |                  | herdando de              |
-|                            | (Pg. 325 de      | BaseIteracaoPolitica.    |
-|                            | \[8\])           |                          |
-+----------------------------+------------------+--------------------------+
-| Tabuleiro(gym.Env)         | Adapter          | Adapta a interface do    |
-|                            |                  | ambiente Gym.Env para a  |
-|                            | (Pg. 138 de      | interface esperada pelo  |
+| Tabuleiro(gym.Env)         | Adapter          | Adapta la interfaz del   |
+|                            |                  | entorno Gym.Env a la     |
+|                            | (Pág. 138 de     | interfaz esperada por el |
 |                            | \[8\])           | MDP.                     |
 +----------------------------+------------------+--------------------------+
-| GridDynamicBuilder         | Builder          | Separa a construção de   |
-|                            |                  | um objeto complexo       |
-|                            | (Pg. 97 de       | (P_Din) da sua           |
-|                            | \[8\])           | representação,           |
-|                            |                  | permitindo que o mesmo   |
-|                            |                  | processo de construção   |
-|                            |                  | crie diferentes          |
-|                            |                  | representações. A classe |
-|                            |                  | fornece métodos          |
-|                            |                  | passo-a-passo            |
+| GridDynamicBuilder         | Builder          | Separa la construcción   |
+|                            |                  | de un objeto complejo    |
+|                            | (Pág. 97 de      | (P_Din) de su            |
+|                            | \[8\])           | representación,          |
+|                            |                  | permitiendo que el mismo |
+|                            |                  | proceso de construcción  |
+|                            |                  | cree diferentes          |
+|                            |                  | representaciones. La     |
+|                            |                  | clase proporciona        |
+|                            |                  | métodos paso a paso      |
 |                            |                  | (adicionar_salto,        |
 |                            |                  | adicionar_terminal,      |
-|                            |                  | etc.) para construir o   |
-|                            |                  | ambiente de grid         |
-|                            |                  | complexo antes de        |
-|                            |                  | retornar o objeto final. |
+|                            |                  | etc.) para construir el  |
+|                            |                  | entorno de grid complejo |
+|                            |                  | antes de devolver el     |
+|                            |                  | objeto final.            |
 +----------------------------+------------------+--------------------------+
-| VisualizadorResultado      | Façade           | Fornece uma interface    |
-|                            |                  | unificada para um        |
-|                            | (Pg. 185 de      | conjunto de interfaces   |
-|                            | \[8\])           | em um subsistema. O      |
-|                            |                  | visualizador esconde a   |
-|                            |                  | complexidade de          |
-|                            |                  | interagir com            |
-|                            |                  | bibliotecas de plotagem  |
-|                            |                  | (provavelmente           |
-|                            |                  | Matplotlib) e estruturas |
-|                            |                  | de dados internas,       |
-|                            |                  | oferecendo métodos       |
-|                            |                  | simples como desenhar e  |
-|                            |                  | comparar para o cliente. |
+| VisualizadorResultado      | Façade           | Proporciona una interfaz |
+|                            |                  | unificada para un        |
+|                            | (Pág. 185 de     | conjunto de interfaces   |
+|                            | \[8\])           | en un subsistema. El     |
+|                            |                  | visualizador oculta la   |
+|                            |                  | complejidad de           |
+|                            |                  | interactuar con          |
+|                            |                  | bibliotecas de           |
+|                            |                  | graficación              |
+|                            |                  | (probablemente           |
+|                            |                  | Matplotlib) y            |
+|                            |                  | estructuras de datos     |
+|                            |                  | internas, ofreciendo     |
+|                            |                  | métodos simples como     |
+|                            |                  | desenhar y comparar para |
+|                            |                  | el cliente.              |
 +----------------------------+------------------+--------------------------+
 
-: **Tabela 3** -- Padrões de Projeto para Obtenção da Política Ótima
+: **3** -- Patrones de Diseño para la Obtención de la Política Óptima
 
-### 5.2.1 -- Resultados para o exemplo do Robô Logístico
+### 5.2.1 -- Resultados para el ejemplo del Robot Logístico
 
-A Figura 13 apresenta os resultados para o Tabuleiro 2 x 2 descrito na
-Figura 3 (Robô Logístico) para os 3 tipos de algoritmos: VI, PI e MPI.
-Os valores de $V^{*}(s)$ são mostrados nas células do tabuleiro 2 x 2.
-As setas vermelhas indicam a Política Ótima $\pi^{*}(a \mid s)$ que
-neste caso é determinística
+La Figura 13 presenta los resultados para el Tablero de 2 x 2 descrito
+en la Figura 3 (Robot Logístico) para los 3 tipos de algoritmos: VI, PI
+y MPI. Los valores de $V^{*}(s)$ se muestran en las celdas del tablero
+de 2 x 2. Las flechas rojas indican la Política Óptima
+$\pi^{*}(a \mid s)$ que en este caso es determinística
 ($S_{0} \rightarrow S_{1} \rightarrow S_{3}$).
 
-![**Figura 13** -- Resultados para o exemplo do Robô
+![**13** -- Resultados para el ejemplo del Robot
 Logístico](media/image11.png){width="6.268055555555556in"
 height="2.1729166666666666in"}
 
-Foram medidos os tempos da execução repetida por 1000 vezes para cada
-algoritmo -- VI, PI e MPI com k=1, para fim de comparação e os
-resultados são apresentados na Tabela 4 (alternativas iterativa e
-vetorizada, numpy, cpu do Google Colab).
+Se midieron los tiempos de la ejecución repetida 1000 veces para cada
+algoritmo -- VI, PI y MPI con k=1, con fines de comparación, y los
+resultados se presentan en la Tabla 4 (alternativas iterativa y
+vectorizada, numpy, cpu de Google Colab).
 
 +-----------------+----------------+----------------+----------------+
-| **Tempo de      | **VI**         | **PI**         | **MPI com k    |
-| Execução**      |                |                | =1**           |
+| **Tiempo de     | **VI**         | **PI**         | **MPI con k    |
+| Ejecución**     |                |                | =1**           |
 |                 |                |                |                |
 | **(1000         |                |                |                |
-| vezes)**        |                |                |                |
+| veces)**        |                |                |                |
 +:===============:+:==============:+:==============:+:==============:+
-| Iterativo       | 0,3654 segs    | 51,4283 segs   | 0,5929 segs    |
+| Iterativo       | 0,3654 seg     | 51,4283 seg    | 0,5929 seg     |
 +-----------------+----------------+----------------+----------------+
-| Vetorizada      | 0,2102 segs    | 28,6350 segs   | 0,3257 segs    |
+| Vectorizada     | 0,2102 seg     | 28,6350 seg    | 0,3257 seg     |
 +-----------------+----------------+----------------+----------------+
 
-: **Tabela 4** -- Tempo de execução para 1000 vezes
+: **4** -- Tiempo de ejecución para 1000 veces
 
-A política ótima obtida está coerente com a Figura 3, pois o caminho
-alternativo $S_{0} \rightarrow S_{2} \rightarrow S_{3}$apresenta maiores
-recompensas médias negativas. Da mesma forma, os tempos obtidos na
-Tabela 4 estão compatíveis com as complexidades de computação da
-Tabela 1. PI é muito mais pesado computacionalmente. O MPI com valor de
-k ajustado como hiperparâmetro é interessante para ser explorado no caso
-de uma maior número de estados.
+La política óptima obtenida es coherente con la Figura 3, pues el camino
+alternativo $S_{0} \rightarrow S_{2} \rightarrow S_{3}$ presenta mayores
+recompensas promedio negativas. De la misma forma, los tiempos obtenidos
+en la Tabla 4 son compatibles con las complejidades de cómputo de la
+Tabla 1. PI es mucho más pesado computacionalmente. El MPI con valor de
+k ajustado como hiperparámetro es interesante de explorar en el caso de
+un mayor número de estados.
 
-### 5.2.2 -- Resultados para o Exemplo 3.8 do livro \[Sutton & Barto\] \[1\]
+### 5.2.2 -- Resultados para el Ejemplo 3.8 del libro \[Sutton & Barto\] \[1\]
 
-Vamos abordar agora o mesmo problema do item 5.1 porém ao invés de
-avaliar uma política conhecida vamos obter a política ótima para o mesmo
-tabuleiro 5 x 5 com as regras de jogo já descritas anteriormente.
+Abordemos ahora el mismo problema del ítem 5.1 pero, en lugar de evaluar
+una política conocida, obtendremos la política óptima para el mismo
+tablero de 5 x 5 con las reglas de juego ya descritas anteriormente.
 
-A Figura 14 apresenta os resultados para o Tabuleiro 5 x 5 descrito no
-exemplo 3.8 do \[Sutton & Barto\] \[1\] para os 3 tipos de algoritmos:
-VI, PI e MPI com k =1. Os valores de $V^{*}(s)$ são mostrados nas
-células do tabuleiro 5 x 5. As setas indicam a Política Ótima
-$\pi^{*}(a \mid s)$ que neste caso é estocástica. Foram obtidos os
-mesmos resultados do livro validando a implementação em Python.
+La Figura 14 presenta los resultados para el Tablero de 5 x 5 descrito
+en el ejemplo 3.8 de \[Sutton & Barto\] \[1\] para los 3 tipos de
+algoritmos: VI, PI y MPI con k =1. Los valores de $V^{*}(s)$ se muestran
+en las celdas del tablero de 5 x 5. Las flechas indican la Política
+Óptima $\pi^{*}(a \mid s)$ que en este caso es estocástica. Se
+obtuvieron los mismos resultados del libro, validando la implementación
+en Python.
 
-![**Figura 14** -- Resultados para o Exemplo 3.8 de \[Sutton & Barto\]
+![**14** -- Resultados para el Ejemplo 3.8 de \[Sutton & Barto\]
 \[1\]](media/image12.png){width="6.268055555555556in"
 height="2.1729166666666666in"}
 
-### 5.2.3 -- Resultados para o Lago Congelado (Frozen Lake)
+### 5.2.3 -- Resultados para el Lago Congelado (Frozen Lake)
 
-As Figuras 11 e 12 também se aplicam a obtenção da Política Ótima para o
-jogo de Tabuleiro do Lago Congelado (*Frozen Lake*) do pacote Gymnasium
-do Python. Porém neste caso a Dinâmica é obtida diretamente do ambiente
-do Frozen Lake não sendo necessário construir a dinâmica a partir de
-regras. A dinâmica obtida do Frozen Lake precisa ser convertida para o
-padrão de codificação das ações utilizado na Classe Tabuleiro como
-mostrado na Tabela 5. Pode-se escolher a opção pista escorregadia ou não
-no ambiente da Frozen Lake.
+Las Figuras 11 y 12 también se aplican a la obtención de la Política
+Óptima para el juego de Tablero del Lago Congelado (*Frozen Lake*) del
+paquete Gymnasium de Python. Sin embargo, en este caso la Dinámica se
+obtiene directamente del entorno del Frozen Lake, no siendo necesario
+construir la dinámica a partir de reglas. La dinámica obtenida del
+Frozen Lake necesita convertirse al estándar de codificación de las
+acciones utilizado en la Clase Tabuleiro, como se muestra en la Tabla 5.
+Se puede elegir la opción de pista resbaladiza o no en el entorno del
+Frozen Lake.
 
   -----------------------------------------------------------------------
-         **Ação**         **Padrão Frozen Lake**   **Padrão Tabuleiro**
+        **Acción**           **Estándar Frozen    **Estándar Tabuleiro**
+                                  Lake**          
   ----------------------- ----------------------- -----------------------
-         Esquerda                    0                       3
+         Izquierda                   0                       3
 
-         Pra Baixo                   1                       2
+        Hacia Abajo                  1                       2
 
-          Direita                    2                       1
+          Derecha                    2                       1
 
-         Pra Cima                    3                       0
+       Hacia Arriba                  3                       0
   -----------------------------------------------------------------------
 
-  : **Tabela 5** -- Conversão de códigos de ação
+  : **5** -- Conversión de códigos de acción
 
-A Figura 15 apresenta uma possibilidade de cenário sorteada para o jogo
-do Frozen Lake. O jogo começa no canto superior esquerdo. Há quatro
-estados terminais de perda (cair no lago) e um estado terminal de
-sucesso (pegar o presente).
+La Figura 15 presenta una posibilidad de escenario sorteado para el
+juego del Frozen Lake. El juego comienza en la esquina superior
+izquierda. Hay cuatro estados terminales de pérdida (caer al lago) y un
+estado terminal de éxito (tomar el regalo).
 
-![**Figura 15** -- Cenário Inicial do Jogo Frozen
+![**15** -- Escenario Inicial del Juego Frozen
 Lake](media/image13.png){width="2.6666666666666665in"
 height="2.6666666666666665in"}
 
-A Figura 16 mostra o Fluxo de dados para construção do Tabuleiro Lago
-Congelado que é posteriormente processado pelo Algoritmo de Planejamento
-para obtenção da Política Ótima.
+La Figura 16 muestra el Flujo de datos para la construcción del Tablero
+Lago Congelado, que posteriormente es procesado por el Algoritmo de
+Planificación para la obtención de la Política Óptima.
 
-![**Figura 16** -- Fluxo de Dados para o jogo do Lago
+![**16** -- Flujo de Datos para el juego del Lago
 Congelado](media/image14.jpg){width="5.915277777777778in"
 height="3.326388888888889in"}
 
-A Figura 17 apresenta os resultados para o Tabuleiro do Lago Congelado
-para os 2 tipos de opção: escorregadio ou não. Os valores de $V^{*}(s)$
-são mostrados nas células do tabuleiro 4 x 4. As setas indicam a
-Política Ótima $\pi^{*}(a \mid s)$ que neste caso é estocástica.
+La Figura 17 presenta los resultados para el Tablero del Lago Congelado
+para los 2 tipos de opción: resbaladizo o no. Los valores de $V^{*}(s)$
+se muestran en las celdas del tablero de 4 x 4. Las flechas indican la
+Política Óptima $\pi^{*}(a \mid s)$ que en este caso es estocástica.
 
-![**Figura 17** -- Resultados para o Tabuleiro do Lago
+![**17** -- Resultados para el Tablero del Lago
 Congelado](media/image15.png){width="6.268055555555556in"
 height="3.2493055555555554in"}
 
-**Obs:** Nota-se que no caso escorregadio a direção das setas não indica
-a direção real que o jogador deve seguir.
+**Obs:** Se observa que en el caso resbaladizo la dirección de las
+flechas no indica la dirección real que el jugador debe seguir.
 
-### 5.2.4 -- Resultados para o Jogo do Wumpus Simplificado
+### 5.2.4 -- Resultados para el Juego del Wumpus Simplificado
 
-As Figuras 11 e 12 também se aplicam a obtenção da Política Ótima para o
-jogo de Tabuleiro Wumpus apresentado no capítulo 7 do livro de \[Russel,
-Norvig\] \[7\]. Porém, como mostrado no fluxo de dados da Figura 18, a
-classe WumpusMDP utiliza a classe GridDynamicBuilder internamente para
-gerar a dinâmica do Wumpus a partir das regras do jogo. Após a geração
-dessa dinâmica pode-se criar um tabuleiro Wumpus para que seja
-processado pelo Algoritmo de Planejamento para obtenção da Política
-Ótima.
+Las Figuras 11 y 12 también se aplican a la obtención de la Política
+Óptima para el juego de Tablero Wumpus presentado en el capítulo 7 del
+libro de \[Russel, Norvig\] \[7\]. Sin embargo, como se muestra en el
+flujo de datos de la Figura 18, la clase WumpusMDP utiliza internamente
+la clase GridDynamicBuilder para generar la dinámica del Wumpus a partir
+de las reglas del juego. Tras la generación de esa dinámica se puede
+crear un tablero Wumpus para que sea procesado por el Algoritmo de
+Planificación para la obtención de la Política Óptima.
 
-O jogo do Tabuleiro Wumpus simplificado possui as seguintes regras:
+El juego del Tablero Wumpus simplificado tiene las siguientes reglas:
 
-![**Figura 18** -- Fluxo de Dados do Tabuleiro
+![**18** -- Flujo de Datos del Tablero
 Wumpus](media/image16.jpg){width="6.211805555555555in"
 height="3.4930555555555554in"}
 
-- Tamanho do tabuleiro n x n (n = 10);
+- Tamaño del tablero n x n (n = 10);
 
-- Número de estados terminais buracos 15% ( 15 para n=10);
+- Número de estados terminales hoyos 15% ( 15 para n=10);
 
-- Um único jogador com estado inicial no canto superior esquerdo;
+- Un único jugador con estado inicial en la esquina superior izquierda;
 
-- Um único monstro Wumpus estático;
+- Un único monstruo Wumpus estático;
 
-- Um estado terminal tesouro;
+- Un estado terminal tesoro;
 
-- Vento nas células vizinhas não diagonais aos buracos;
+- Viento en las celdas vecinas no diagonales a los hoyos;
 
-- Cheiro nas células vizinhas não diagonais ao monstro Wumpus;
+- Olor en las celdas vecinas no diagonales al monstruo Wumpus;
 
-- Brilho de luz nas células vizinhas não diagonais a tesouro;
+- Brillo de luz en las celdas vecinas no diagonales al tesoro;
 
-- Posições do Wumps, tesouro e buracos sorteadas inicialmente e
-  mutuamente excludentes entre si e o jogador; e
+- Posiciones del Wumpus, tesoro y hoyos sorteadas inicialmente y
+  mutuamente excluyentes entre sí y con el jugador; y
 
-- Possibilidade de superposição dos efeitos de vento, cheiro e luz entre
-  si e com as posições do jogador, do Wumpus, dos buracos e do tesouro.
+- Posibilidad de superposición de los efectos de viento, olor y luz
+  entre sí y con las posiciones del jugador, del Wumpus, de los hoyos y
+  del tesoro.
 
-Objetivos do Jogo:
+Objetivos del Juego:
 
-- Etapa 1 -- O jogador move-se até a posição do Tesouro para pegá-lo;
+- Etapa 1 -- El jugador se mueve hasta la posición del Tesoro para
+  tomarlo;
 
-- Etapa 2 -- O jogador retorna com o Tesouro até a sua posição inicial.
+- Etapa 2 -- El jugador regresa con el Tesoro hasta su posición inicial.
 
-A Tabela 6 mostra o modelo de recompensas para o jogo do Wumpus.
+La Tabla 6 muestra el modelo de recompensas para el juego del Wumpus.
 
   -----------------------------------------------------------------------
-   **Tipo de Recompensa (Indo para o        **Valor da Recompensa**
+    **Tipo de Recompensa (Yendo al        **Valor de la Recompensa**
                estado)**              
   ----------------------------------- -----------------------------------
-                Padrão                               -1,0
+               Estándar                              -1,0
 
-                Parede                               -2,0
+                 Pared                               -2,0
 
-                 Ouro                              +1.000,00
+                  Oro                              +1.000,00
 
                 Wumpus                             -1.000,00
 
-                Buraco                               -3.0
+                 Hoyo                                -3.0
 
-                 Vento                               -3.0
+                Viento                               -3.0
 
                   Luz                                +1.0
   -----------------------------------------------------------------------
 
-  : **Tabela 6** -- Modelo de Recompensas para o Jogo do Wumpus
+  : **6** -- Modelo de Recompensas para el Juego del Wumpus
 
-**Obs:** Para a Etapa 2 a posição do tesouro torna-se a posição inicial
-e a posição inicial original torna-se a posição de destino com
-recompensa igual a +1.000,00 em sua transição para este estado terminal.
+**Obs:** Para la Etapa 2, la posición del tesoro pasa a ser la posición
+inicial y la posición inicial original pasa a ser la posición de destino
+con recompensa igual a +1.000,00 en su transición a este estado
+terminal.
 
-A Figura 19 mostra as posições resultantes do sorteio no início da Etapa
-1.
+La Figura 19 muestra las posiciones resultantes del sorteo al inicio de
+la Etapa 1.
 
-![**Figura 19** -- Posições Sorteados no início da Etapa
+![**19** -- Posiciones Sorteadas al inicio de la Etapa
 1](media/image17.png){width="4.816666666666666in"
 height="4.950694444444444in"}
 
-**Obs:** A -- Posição Inicial; B- Buraco; O- Tesouro; W -- Wumpus;
-efeitos de vento, cheiro e luz em células vizinhas com diferentes cores.
+**Obs:** A -- Posición Inicial; B- Hoyo; O- Tesoro; W -- Wumpus; efectos
+de viento, olor y luz en celdas vecinas con diferentes colores.
 
-A Figura 20 apresenta os resultados para a Etapa 1 do jogo do Wumpus. Os
-valores de $V^{*}(s)$ são mostrados nas células do tabuleiro 10 x 10. As
-setas em vermelha indicam a Política Ótima $\pi^{*}(a \mid s)$ a partir
-do estado inicial.
+La Figura 20 presenta los resultados para la Etapa 1 del juego del
+Wumpus. Los valores de $V^{*}(s)$ se muestran en las celdas del tablero
+de 10 x 10. Las flechas en rojo indican la Política Óptima
+$\pi^{*}(a \mid s)$ a partir del estado inicial.
 
-![**Figura 20** -- Resultados para a Etapa 1 do Jogo do
+![**20** -- Resultados para la Etapa 1 del Juego del
 Wumpus](media/image18.png){width="6.268055555555556in"
 height="6.442361111111111in"}
 
-A Figura 21 mostra as posições no início da Etapa 2.
+La Figura 21 muestra las posiciones al inicio de la Etapa 2.
 
-![**Figura 21** -- Posições no início da Etapa
+![**21** -- Posiciones al inicio de la Etapa
 2.](media/image19.png){width="5.816399825021873in"
 height="5.977832458442695in"}
 
-A Figura 22 apresenta os resultados para a Etapa 2 do jogo do Wumpus. Os
-valores de $V^{*}(s)$ são mostrados nas células do tabuleiro 10 x 10. As
-setas em vermelha indicam a Política Ótima $\pi^{*}(a \mid s)$ a partir
-do estado inicial.
+La Figura 22 presenta los resultados para la Etapa 2 del juego del
+Wumpus. Los valores de $V^{*}(s)$ se muestran en las celdas del tablero
+de 10 x 10. Las flechas en rojo indican la Política Óptima
+$\pi^{*}(a \mid s)$ a partir del estado inicial.
 
-![**Figura 22** -- Resultados para a Etapa 2 do Jogo do
+![**22** -- Resultados para la Etapa 2 del Juego del
 Wumpus.](media/image20.png){width="6.111805555555556in"
 height="6.282638888888889in"}
 
-# Conclusões:
+# Conclusiones:
 
-- Os algoritmos de obtenção de política ótima para MDP funcionaram
-  corretamente nos exemplos de jogos de tabuleiro apresentados. Os
-  algoritmos VI e MPI para k = 1 apresentaram melhor desempenho em tempo
-  de execução, sendo o PI bem mais pesado (ver Tabela 4). Observa-se no
-  MPI que é desnecessária a convergência da função de valor de estado
-  V(s) para começar a melhorar a política π(a\|s), o que possibilita
-  melhor desempenho em tempo de execução ao se ajustar o hiperparâmetro
-  k.
+- Los algoritmos de obtención de política óptima para MDP funcionaron
+  correctamente en los ejemplos de juegos de tablero presentados. Los
+  algoritmos VI y MPI para k = 1 presentaron mejor desempeño en tiempo
+  de ejecución, siendo el PI mucho más pesado (ver Tabla 4). Se observa
+  en el MPI que no es necesaria la convergencia de la función de valor
+  de estado V(s) para comenzar a mejorar la política π(a\|s), lo que
+  posibilita un mejor desempeño en tiempo de ejecución al ajustar el
+  hiperparámetro k.
 
-- Os exemplos estudados possuem número de estados limitado (máximo de
-  100). Para problemas mais complexos, o número de estados impacta de
-  forma relevante o tempo de computação --- explosão de estados (ver
-  Tabela 1). No próprio exemplo do Wumpus, se considerássemos os
-  subestados de percepções de vento, cheiro e luz em cada estado, em vez
-  de tratá-los como recompensas, teríamos um número maior de estados.
+- Los ejemplos estudiados tienen un número de estados limitado (máximo
+  de 100). Para problemas más complejos, el número de estados impacta de
+  forma relevante el tiempo de cómputo --- explosión de estados (ver
+  Tabla 1). En el propio ejemplo del Wumpus, si consideráramos los
+  subestados de percepciones de viento, olor y luz en cada estado, en
+  lugar de tratarlos como recompensas, tendríamos un número mayor de
+  estados.
 
-- Uma limitação dos MDP é a necessidade de conhecer a priori todo o
-  modelo da dinâmica P(r, s\'\|s, a). Nos jogos de tabuleiro estudados,
-  essa dinâmica foi construída a partir das regras do jogo e do modelo
-  de recompensas. Porém, isso nem sempre é possível em problemas reais.
+- Una limitación de los MDP es la necesidad de conocer a priori todo el
+  modelo de la dinámica P(r, s\'\|s, a). En los juegos de tablero
+  estudiados, esa dinámica se construyó a partir de las reglas del juego
+  y del modelo de recompensas. Sin embargo, esto no siempre es posible
+  en problemas reales.
 
-- Como em muitos problemas da vida real o modelo não é conhecido, foram
-  desenvolvidos algoritmos livres de modelo (Model Free), como SARSA e
-  Q-Learning. No exercício do Wumpus, se o monstro também se mover a
-  cada jogada, a dinâmica se torna mais complexa e o espaço de estados
-  cresce, cenário em que um algoritmo livre de modelo se aplicaria.
+- Como en muchos problemas de la vida real el modelo no se conoce, se
+  desarrollaron algoritmos libres de modelo (Model Free), como SARSA y
+  Q-Learning. En el ejercicio del Wumpus, si el monstruo también se
+  moviera en cada jugada, la dinámica se vuelve más compleja y el
+  espacio de estados crece, escenario en el que se aplicaría un
+  algoritmo libre de modelo.
 
-- Alguns algoritmos baseiam-se em amostragem e busca em árvore com
-  *pruning* para mitigar a explosão de estados, como Monte Carlo e MCTS.
-  Além disso, os algoritmos de MDP requerem a observação dos estados do
-  ambiente, o que muitas vezes não é possível; para esses casos foram
-  desenvolvidos algoritmos para estados parcialmente observáveis, os
-  POMDPs. Nesses problemas, as observações, por si só, não satisfazem a
-  propriedade de Markov, o que impede o uso direto da Equação de Bellman
-  sobre elas. A solução padrão reformula o problema no espaço de
-  **estados de crença** (*belief states*) --- distribuições de
-  probabilidade sobre os estados ocultos ---, onde a propriedade de
-  Markov é restaurada e a Equação de Bellman volta a ser aplicável
-  \[9\].
+- Algunos algoritmos se basan en muestreo y búsqueda en árbol con
+  *pruning* para mitigar la explosión de estados, como Monte Carlo y
+  MCTS. Además, los algoritmos de MDP requieren la observación de los
+  estados del entorno, lo que muchas veces no es posible; para esos
+  casos se desarrollaron algoritmos para estados parcialmente
+  observables, los POMDPs. En estos problemas, las observaciones, por sí
+  solas, no satisfacen la propiedad de Markov, lo que impide el uso
+  directo de la Ecuación de Bellman sobre ellas. La solución estándar
+  reformula el problema en el espacio de **estados de creencia**
+  (*belief states*) --- distribuciones de probabilidad sobre los estados
+  ocultos ---, donde la propiedad de Markov se restaura y la Ecuación de
+  Bellman vuelve a ser aplicable \[9\].
 
-- Outras limitações ao uso da Equação de Bellman em problemas reais são
-  mencionadas em \[9\]: a **não estacionaridade**, em que a dinâmica do
-  ambiente varia com o tempo --- como no exemplo do Wumpus, se o monstro
-  também se mover a cada passo do jogador; a **restrição a recompensas
-  escalares**, pois o formalismo padrão exige que o objetivo seja
-  expresso como um único escalar, o que não contempla problemas com
-  múltiplos objetivos conflitantes (que exigiriam vetores de
-  recompensa); a **não aditividade das recompensas**, já que a Equação
-  de Bellman pressupõe que o retorno é a soma descontada das
-  recompensas, suposição que falha quando o agente tem preferências não
-  lineares sobre a distribuição de retornos; e a presença de **múltiplos
-  agentes** atuando no mesmo ambiente, caso em que o processo deixa de
-  ser um MDP e passa a ser um jogo de Markov, no qual as transições e
-  recompensas dependem da ação conjunta dos agentes e o conceito
-  relevante passa a ser o de equilíbrio, não o de política ótima de
-  agente único.
+- Otras limitaciones al uso de la Ecuación de Bellman en problemas
+  reales se mencionan en \[9\]: la **no estacionariedad**, en que la
+  dinámica del entorno varía con el tiempo --- como en el ejemplo del
+  Wumpus, si el monstruo también se moviera en cada paso del jugador; la
+  **restricción a recompensas escalares**, pues el formalismo estándar
+  exige que el objetivo se exprese como un único escalar, lo que no
+  contempla problemas con múltiples objetivos conflictivos (que
+  exigirían vectores de recompensa); la **no aditividad de las
+  recompensas**, ya que la Ecuación de Bellman presupone que el retorno
+  es la suma descontada de las recompensas, suposición que falla cuando
+  el agente tiene preferencias no lineales sobre la distribución de
+  retornos; y la presencia de **múltiples agentes** actuando en el mismo
+  entorno, caso en que el proceso deja de ser un MDP y pasa a ser un
+  juego de Markov, en el cual las transiciones y recompensas dependen de
+  la acción conjunta de los agentes y el concepto relevante pasa a ser
+  el de equilibrio, no el de política óptima de agente único.
 
-- No problema do Wumpus, utilizamos uma função de recompensa adaptada de
-  \[7\]. Projetar uma função de recompensa para um problema específico
-  não é trivial e geralmente exige experimentação. A referência \[10\]
-  aborda essa questão e apresenta abordagens para lidar com ela.
+- En el problema del Wumpus, utilizamos una función de recompensa
+  adaptada de \[7\]. Diseñar una función de recompensa para un problema
+  específico no es trivial y generalmente exige experimentación. La
+  referencia \[10\] aborda esta cuestión y presenta enfoques para lidiar
+  con ella.
 
-# Referências
+# Referencias
 
 \[1\] \[Sutton & Barto\] *Reinforcement Learning -- Second Edition* --
-The MIT Press - Capítulos 3 e 4 - 2018
+The MIT Press - Capítulos 3 y 4 - 2018
 
 \[2\] \[Lapam\] *Deep Reinforcement Learning Hands-On* -*Third Edition*
 -- Capítulo 2 -- 2024
 
 \[3\] \[Puttermann\] Markov Decision Processes and Reinforcement
-Learning - <https://github.com/martyput/MDP_book>, acesso em 12/08/2026
+Learning - <https://github.com/martyput/MDP_book>, acceso el 12/08/2026
 
 \[4\] \[Falcão\] Da Teoria ao Código: Implementando *K-Armed Bandits*
 com Padrões de Projeto, 10/08/2026,
 <https://github.com/kwahcarioca/Reinforcement-Learning/tree/main/K-bandidos/paper>
 
 \[5\] \[AnáliseMacro\] Cadeias de Markov no R: Prevendo o Mercado
-Financeiro -- 2022 -- acesso em 08/09/2026 -
+Financeiro -- 2022 -- acceso el 08/09/2026 -
 <https://analisemacro.com.br/mercado-financeiro/aplicacao-de-cadeias-de-markov-no-mercado-financeiro-com-o-r/>
 
 \[6\] \[Bellman\] *Dynamic Programming -- Rand Corporation* -1957
 
 \[7\] \[Russel, Norvig\] Inteligência Artificial -- Uma Abordagem
-Moderna -- Quarta Edição -- Capítulos 7 e 17, LTC -- 2022
+Moderna -- Quarta Edição -- Capítulos 7 y 17, LTC -- 2022
 
 \[8\] \[Gamma e outros\] -- *Design Patterns -- Elements of Reusable
 Object-Oriented Software --* Addison-Wesley, 1995
 
 \[9\] \[Pineau\] *Beyond's Bellman's Legacy -- Rethinking what we value
 -- Reinforcement Learning Conference - Edmonton* -- AMII -- 2025 -
-https://www.youtube.com/watch?v=PZcaMKxljxc - acesso em 17/09/2026 -
+https://www.youtube.com/watch?v=PZcaMKxljxc - acceso el 17/09/2026 -
 
 \[10\] \[Muslimani\] *Reward Design and Evaluation in Reinforcement
-Learning -- AI Seminar* -- AMII -- 2026 - acesso em 17/09/2026 -
+Learning -- AI Seminar* -- AMII -- 2026 - acceso el 17/09/2026 -
 <https://www.youtube.com/watch?v=Mva478tO6s4&list=PLKlhhkvvU8-aXXTPoxjxLWXySum1SjLH0&index=16&t=645s>
 
 \[11\] GitHub -
